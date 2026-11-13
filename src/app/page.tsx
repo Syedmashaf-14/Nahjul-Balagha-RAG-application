@@ -4,18 +4,20 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
-  BookOpen,
   ArrowRight,
-  Compass,
-  GraduationCap,
   Bookmark,
-  Share2,
-  RefreshCw,
-  Award,
+  Headphones,
+  TrendingUp,
+  Play,
+  Clock,
+  Compass,
+  Check,
 } from 'lucide-react';
 import { IDailyWisdom } from '@/types/api.types';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [wisdom, setWisdom] = useState<IDailyWisdom | null>(null);
   const [loadingWisdom, setLoadingWisdom] = useState(true);
 
@@ -31,205 +33,305 @@ export default function DashboardPage() {
       .finally(() => setLoadingWisdom(false));
   }, []);
 
-  return (
-    <div className="space-y-8 pb-12">
-      {/* Hero Welcome Banner */}
-      <section className="relative overflow-hidden rounded-3xl glass-panel p-6 md:p-10 border border-emerald-500/20 bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-slate-950/80">
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Personalized Knowledge Platform</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Explore the Peak of Eloquence
-          </h1>
-          <p className="mt-3 text-sm md:text-base text-slate-300 leading-relaxed">
-            Welcome to your intelligent learning companion for Nahj al-Balagha. Discover sermons,
-            governance treaties, and ethical maxims with verified citations and personalized guidance.
-          </p>
+  const todayDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/chat"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Converse with AI Companion</span>
-            </Link>
-            <Link
-              href="/explore"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:bg-slate-800 text-slate-200 text-sm font-medium transition-all"
-            >
-              <Compass className="w-4 h-4 text-emerald-400" />
-              <span>Browse All Passages</span>
-            </Link>
-          </div>
+  return (
+    <div className="space-y-10 pb-16">
+      {/* 1. Greeting Header matching Image 1 */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E877D] block mb-1">
+            {todayDate}
+          </span>
+          <h1 className="font-serif-title text-3xl md:text-4xl text-[#18231C] tracking-tight font-medium">
+            As-salāmu &lsquo;alaykum, {user.isGuest ? 'Ahmed' : user.name.split(' ')[0]}
+          </h1>
+          <p className="text-xs md:text-sm text-[#58635B] mt-1">
+            Continue your journey through timeless wisdom.
+          </p>
         </div>
 
-        {/* Decorative Calligraphy watermark */}
-        <div className="absolute right-4 -bottom-6 font-arabic text-8xl md:text-9xl text-emerald-500/5 select-none pointer-events-none font-bold">
-          نهج البلاغة
+        <div className="flex items-center gap-2 text-right">
+          <TrendingUp className="w-4 h-4 text-[#143E2E]" />
+          <div>
+            <span className="text-xs font-bold text-[#18231C] block leading-tight">12 passages</span>
+            <span className="text-[10px] text-[#8E877D]">explored this month</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Today's Wisdom Hero Banner matching Image 1 */}
+      <section className="relative rounded-3xl bg-geometric-rings text-white p-6 md:p-10 shadow-md overflow-hidden">
+        {/* Banner Top Bar */}
+        <div className="flex items-center justify-between text-[11px] font-semibold text-[#C1DFC9] uppercase tracking-wider mb-6">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#F2D07C]" />
+            <span>TODAY&apos;S WISDOM</span>
+          </div>
+          <span className="tracking-widest">
+            {wisdom ? `${wisdom.passageType.toUpperCase()} ${wisdom.passageNumber}` : 'SAYING 81'}
+          </span>
+        </div>
+
+        {/* Banner Main Quote */}
+        <div className="max-w-3xl mx-auto text-center space-y-4 py-2">
+          <p className="font-arabic text-2xl md:text-3xl text-[#F9F7EE] leading-loose font-normal">
+            {wisdom?.arabicText || 'قِيمَةُ كُلِّ امْرِئٍ مَا يُحْسِنُهُ'}
+          </p>
+
+          <p className="font-serif-title text-xl md:text-2xl text-white font-medium italic">
+            &ldquo;{wisdom?.translationText || 'The worth of every person is in what they do well.'}&rdquo;
+          </p>
+
+          <p className="text-xs text-[#C6DFD0] max-w-xl mx-auto leading-relaxed">
+            {wisdom?.reflectionQuestion ||
+              'A brief teaching on excellence, purpose, and recognizing the value carried in one’s abilities and virtues.'}
+          </p>
+        </div>
+
+        {/* Banner Bottom Controls */}
+        <div className="flex items-center justify-between pt-6 border-t border-white/10 mt-6 text-xs">
+          <Link
+            href={`/chat?q=${encodeURIComponent(
+              wisdom
+                ? `Explain the context and deeper wisdom of ${wisdom.passageType} ${wisdom.passageNumber}: "${wisdom.translationText}"`
+                : 'Explain Saying 81: "The worth of every person is in what they do well."'
+            )}`}
+            className="flex items-center gap-1.5 text-[#E6F3EB] hover:text-white font-medium transition-colors"
+          >
+            <span>Explore this saying</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+
+          <div className="flex items-center gap-3 text-[#C6DFD0]">
+            <button title="Audio contemplation" className="hover:text-white transition-colors">
+              <Headphones className="w-4 h-4" />
+            </button>
+            <button title="Bookmark wisdom" className="hover:text-white transition-colors">
+              <Bookmark className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Daily Wisdom Card */}
-      <section className="glass-panel rounded-3xl p-6 md:p-8 border border-amber-500/20 bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-slate-950/70">
-        <div className="flex items-center justify-between mb-4 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-            <h2 className="text-base font-bold text-amber-300 uppercase tracking-wider text-xs">
-              Daily Wisdom & Contemplation
-            </h2>
-          </div>
-          {wisdom && (
-            <span className="text-xs text-slate-400 font-medium capitalize">
-              {wisdom.passageType} #{wisdom.passageNumber} • {wisdom.topic}
-            </span>
-          )}
+      {/* 3. YOUR JOURNEY / Continue Learning Section matching Image 1 */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base md:text-lg font-bold text-[#18231C] tracking-tight">
+            Continue learning
+          </h2>
+          <Link
+            href="/learn"
+            className="text-xs font-semibold text-[#143E2E] hover:underline flex items-center gap-1"
+          >
+            <span>View learning path</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
-        {loadingWisdom ? (
-          <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-            <RefreshCw className="w-6 h-6 animate-spin text-emerald-400 mb-2" />
-            <p className="text-xs">Preparing personalized contemplation...</p>
+        {/* Split Card */}
+        <div className="rounded-3xl card-base card-hover overflow-hidden flex flex-col md:flex-row">
+          {/* Left Arch Graphic */}
+          <div className="md:w-1/3 bg-[#DDECE3] p-8 flex flex-col items-center justify-center relative min-h-[160px]">
+            {/* Elegant Arch Silhouette */}
+            <div className="w-24 h-32 border-2 border-[#143E2E]/20 arch-shape flex items-center justify-center bg-white/40">
+              <span className="font-arabic text-3xl text-[#143E2E] font-bold">ع</span>
+            </div>
+            <span className="text-[11px] font-bold text-[#143E2E] mt-4 uppercase tracking-wider">
+              Leadership & Governance
+            </span>
           </div>
-        ) : wisdom ? (
-          <div className="space-y-6">
-            {wisdom.arabicText && (
-              <p className="font-arabic text-xl md:text-2xl text-amber-100 text-right leading-loose font-normal">
-                {wisdom.arabicText}
-              </p>
-            )}
 
-            <p className="text-slate-200 text-base md:text-lg leading-relaxed italic border-l-2 border-amber-500/40 pl-4">
-              &ldquo;{wisdom.translationText}&rdquo;
-            </p>
-
-            {wisdom.reflectionQuestion && (
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block mb-1">
-                  Reflection Prompt:
-                </span>
-                <p className="text-sm text-slate-300 font-medium">
-                  {wisdom.reflectionQuestion}
-                </p>
+          {/* Right Content */}
+          <div className="flex-1 p-6 md:p-8 flex flex-col justify-between space-y-4 bg-white">
+            <div>
+              <div className="flex items-center justify-between text-xs text-[#8E877D] mb-1">
+                <span className="font-bold uppercase tracking-wider text-[10px]">LESSON 3 OF 8</span>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-[11px]">
+                    <Clock className="w-3 h-3" />
+                    14 MIN
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-[#F4F1EA] text-[#18231C] font-bold text-[10px]">
+                    LETTER 53
+                  </span>
+                </div>
               </div>
-            )}
 
-            <div className="flex items-center justify-between pt-2">
+              <h3 className="font-serif-title text-xl md:text-2xl font-bold text-[#18231C]">
+                Justice as the pillar of leadership
+              </h3>
+              <p className="text-xs text-[#58635B] mt-1.5 leading-relaxed">
+                Explore how justice, responsibility, and compassion shape ethical governance through Letter 53 to Malik al-Ashtar.
+              </p>
+            </div>
+
+            {/* Progress Bar & Continue Button */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-[#ECE7DE] h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-[#143E2E] h-full rounded-full" style={{ width: '38%' }} />
+                </div>
+                <span className="text-[11px] font-bold text-[#8E877D]">38%</span>
+              </div>
+
               <Link
-                href={`/chat?q=${encodeURIComponent(
-                  `Can you explain the context and deeper ethical implications of ${wisdom.passageType} ${wisdom.passageNumber}: "${wisdom.translationText.substring(0, 80)}"?`
-                )}`}
-                className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+                href="/learn"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#143E2E] hover:bg-[#0E2F23] text-white text-xs font-semibold shadow-xs transition-all"
               >
-                <span>Explore this passage with AI</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Continue lesson</span>
               </Link>
             </div>
           </div>
-        ) : (
-          <p className="text-sm text-slate-400">No daily wisdom available at the moment.</p>
-        )}
-      </section>
-
-      {/* Core Divisions & Topics Grid */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">The Three Sections</h2>
-            <p className="text-xs text-slate-400">The historical compilations of al-Sharif al-Radi</p>
-          </div>
-          <Link href="/explore" className="text-xs font-semibold text-emerald-400 hover:underline">
-            View All
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/explore?type=sermon"
-            className="glass-panel glass-panel-hover rounded-2xl p-5 border border-slate-800"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold mb-3 border border-emerald-500/20">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">The Sermons (Khutbat)</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              241 profound discourses on theology, creation of the universe, piety, and the destiny of mankind.
-            </p>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-              <span>Read Sermons</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          <Link
-            href="/explore?type=letter"
-            className="glass-panel glass-panel-hover rounded-2xl p-5 border border-slate-800"
-          >
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold mb-3 border border-blue-500/20">
-              <Share2 className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">The Letters (Kutub)</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              79 historical instructions and political treatises, including the universal charter of governance (Letter 53).
-            </p>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-blue-400 font-semibold">
-              <span>Read Letters</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          <Link
-            href="/explore?type=saying"
-            className="glass-panel glass-panel-hover rounded-2xl p-5 border border-slate-800"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold mb-3 border border-amber-500/20">
-              <Award className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">Maxims & Sayings (Hikam)</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              480 concise ethical aphorisms on human nature, wisdom, virtue, self-discipline, and righteousness.
-            </p>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
-              <span>Read Sayings</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
         </div>
       </section>
 
-      {/* Thematic Learning Topics */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
+      {/* 4. SELECTED FOR YOU / Recommended Readings matching Image 1 & 2 */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Thematic Explorations</h2>
-            <p className="text-xs text-slate-400">Curated ethical concepts across all passages</p>
+            <h2 className="text-base md:text-lg font-bold text-[#18231C] tracking-tight">
+              Recommended readings
+            </h2>
           </div>
-          <Link href="/learn" className="text-xs font-semibold text-emerald-400 hover:underline">
-            Start Course
+          <Link
+            href="/explore"
+            className="text-xs font-semibold text-[#143E2E] hover:underline flex items-center gap-1"
+          >
+            <span>Explore all</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          {[
-            { name: 'Justice & Fairness', topic: 'justice' },
-            { name: 'Leadership & Governance', topic: 'governance' },
-            { name: 'Patience (Sabr)', topic: 'patience' },
-            { name: 'Knowledge & True Scholars', topic: 'knowledge' },
-            { name: 'Piety & Taqwa', topic: 'piety' },
-            { name: 'Human Rights', topic: 'human_rights' },
-            { name: 'Worldly Detachment (Zuhd)', topic: 'worldly_detachment' },
-            { name: 'Self-Discipline & Ethics', topic: 'ethics_morality' },
-          ].map((t) => (
-            <Link
-              key={t.topic}
-              href={`/learn?topic=${t.topic}`}
-              className="px-4 py-2 rounded-xl glass-panel glass-panel-hover border border-slate-800 text-xs font-semibold text-slate-200 hover:text-emerald-400 hover:border-emerald-500/40"
-            >
-              {t.name}
-            </Link>
-          ))}
+        {/* 3 Reading Cards with Arches */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: Sermon 216 */}
+          <div className="card-base card-hover rounded-3xl overflow-hidden flex flex-col justify-between">
+            <div className="bg-[#DDECE3] h-32 flex items-center justify-center relative">
+              <span className="absolute top-3 left-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 text-[#143E2E]">
+                SERMON
+              </span>
+              <button
+                className="absolute top-3 right-4 p-1.5 rounded-full bg-white/70 text-[#143E2E] hover:bg-white transition-colors"
+                title="Save passage"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+              </button>
+              {/* Arch Silhouette */}
+              <div className="w-16 h-20 border-2 border-[#143E2E]/20 arch-shape flex items-center justify-center bg-white/30">
+                <span className="font-arabic text-xl font-bold text-[#143E2E]">عدل</span>
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3 bg-white">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-[#8E877D] tracking-wider block">
+                  SERMON 216
+                </span>
+                <h3 className="font-serif-title font-bold text-base text-[#18231C] mt-1 leading-snug">
+                  Justice is the foundation of order
+                </h3>
+                <p className="text-xs text-[#58635B] mt-1.5 line-clamp-2 leading-relaxed">
+                  A profound reflection on mutual rights, responsibility, and the moral basis of fair governance.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#8E877D] pt-2 border-t border-[#ECE7DE]">
+                <span className="px-2 py-0.5 rounded-md bg-[#F4F1EA] text-[#58635B] font-medium text-[10px]">
+                  Justice
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  8 min
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Letter 31 */}
+          <div className="card-base card-hover rounded-3xl overflow-hidden flex flex-col justify-between">
+            <div className="bg-[#F0ECE1] h-32 flex items-center justify-center relative">
+              <span className="absolute top-3 left-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 text-[#4D4536]">
+                LETTER
+              </span>
+              <button
+                className="absolute top-3 right-4 p-1.5 rounded-full bg-white/70 text-[#143E2E] hover:bg-white transition-colors"
+                title="Save passage"
+              >
+                <Bookmark className="w-3.5 h-3.5 fill-[#143E2E]" />
+              </button>
+              {/* Arch Silhouette */}
+              <div className="w-16 h-20 border-2 border-[#4D4536]/20 arch-shape flex items-center justify-center bg-white/30">
+                <span className="font-arabic text-xl font-bold text-[#4D4536]">نصح</span>
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3 bg-white">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-[#8E877D] tracking-wider block">
+                  LETTER 31
+                </span>
+                <h3 className="font-serif-title font-bold text-base text-[#18231C] mt-1 leading-snug">
+                  A father&apos;s counsel to his son
+                </h3>
+                <p className="text-xs text-[#58635B] mt-1.5 line-clamp-2 leading-relaxed">
+                  Timeless guidance on character, humility, knowledge, and navigating through the world wisely.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#8E877D] pt-2 border-t border-[#ECE7DE]">
+                <span className="px-2 py-0.5 rounded-md bg-[#F4F1EA] text-[#58635B] font-medium text-[10px]">
+                  Character
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  12 min
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Saying 147 */}
+          <div className="card-base card-hover rounded-3xl overflow-hidden flex flex-col justify-between">
+            <div className="bg-[#E2EAF0] h-32 flex items-center justify-center relative">
+              <span className="absolute top-3 left-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/70 text-[#2B4353]">
+                SAYING
+              </span>
+              <button
+                className="absolute top-3 right-4 p-1.5 rounded-full bg-white/70 text-[#143E2E] hover:bg-white transition-colors"
+                title="Save passage"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+              </button>
+              {/* Arch Silhouette */}
+              <div className="w-16 h-20 border-2 border-[#2B4353]/20 arch-shape flex items-center justify-center bg-white/30">
+                <span className="font-arabic text-xl font-bold text-[#2B4353]">علم</span>
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3 bg-white">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-[#8E877D] tracking-wider block">
+                  SAYING 147
+                </span>
+                <h3 className="font-serif-title font-bold text-base text-[#18231C] mt-1 leading-snug">
+                  The worth of knowledge
+                </h3>
+                <p className="text-xs text-[#58635B] mt-1.5 line-clamp-2 leading-relaxed">
+                  On the enduring value of knowledge over wealth, and the responsibility carried by those who possess it.
+                </p>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#8E877D] pt-2 border-t border-[#ECE7DE]">
+                <span className="px-2 py-0.5 rounded-md bg-[#F4F1EA] text-[#58635B] font-medium text-[10px]">
+                  Knowledge
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  4 min
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

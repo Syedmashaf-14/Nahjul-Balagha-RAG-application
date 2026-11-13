@@ -83,190 +83,179 @@ export default function SettingsPage() {
 
   if (loading || !prefs) {
     return (
-      <div className="py-20 text-center text-slate-400">
-        <p className="text-xs">Loading personalization profile...</p>
+      <div className="py-24 text-center text-[#58635B]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#143E2E] border-t-transparent animate-spin mx-auto mb-2" />
+        <p className="text-xs font-medium">Loading personalization profiles...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl space-y-6 pb-12">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-          <Sliders className="w-7 h-7 text-emerald-400" />
-          Personalization & AI Directives
-        </h1>
-        <p className="text-xs md:text-sm text-slate-400 mt-1">
-          Customize how the AI companion explains Nahj al-Balagha, adapts to your vocabulary, and formats responses.
-        </p>
+    <div className="space-y-8 pb-16 max-w-4xl mx-auto">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
+            USER CONFIGURATION
+          </span>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
+            Personal Intelligence Settings
+          </h1>
+          <p className="text-xs md:text-sm text-[#58635B]">
+            Configure language, commentary depth, and learning goals for your Nahj al-Balagha companion.
+          </p>
+        </div>
+
+        <button
+          onClick={handleReset}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#ECE7DE] hover:border-[#143E2E]/40 text-xs font-semibold text-[#58635B] hover:text-[#18231C] transition-all self-start sm:self-auto shadow-xs"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>Reset Defaults</span>
+        </button>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Language & Tone Card */}
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-5">
-          <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Language & Delivery Preferences
+        {/* Core Language & Explanation Card */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#ECE7DE] shadow-xs space-y-6">
+          <h2 className="text-base font-serif font-bold text-[#18231C] flex items-center gap-2 border-b border-[#ECE7DE] pb-3">
+            <Sparkles className="w-4 h-4 text-[#143E2E]" />
+            Response & Commentary Preferences
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Preferred Language */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Preferred Language
+              <label className="block text-xs font-bold text-[#58635B] uppercase tracking-wider mb-2">
+                Primary Language
               </label>
               <select
                 value={prefs.language}
-                onChange={(e) => setPrefs({ ...prefs, language: e.target.value as any })}
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/60"
+                onChange={(e) =>
+                  setPrefs({ ...prefs, language: e.target.value as any })
+                }
+                className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs md:text-sm text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
               >
-                <option value="english">English (Articulate & Philosophical)</option>
-                <option value="urdu">اردو (Urdu Literary & Dignified)</option>
-                <option value="arabic">العربية (Classical Arabic Fusha)</option>
-                <option value="roman_urdu">Roman Urdu (Urdu in Latin Script)</option>
+                <option value="english">English</option>
+                <option value="urdu">Urdu (اردو)</option>
+                <option value="arabic">Arabic (العربية)</option>
+                <option value="roman_urdu">Roman Urdu</option>
               </select>
             </div>
 
             {/* Explanation Level */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Explanation Depth
+              <label className="block text-xs font-bold text-[#58635B] uppercase tracking-wider mb-2">
+                Depth of Explanation
               </label>
               <select
                 value={prefs.explanationLevel}
                 onChange={(e) =>
                   setPrefs({ ...prefs, explanationLevel: e.target.value as any })
                 }
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/60"
+                className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs md:text-sm text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
               >
-                <option value="beginner">Beginner (Clear analogies, simplified concepts)</option>
-                <option value="intermediate">Intermediate (Balanced historical & moral context)</option>
-                <option value="advanced">Advanced (Deep rhetorical & ethical analysis)</option>
-                <option value="researcher">Researcher (Scholarly, textual cross-examination)</option>
+                <option value="beginner">Beginner (Clear & accessible)</option>
+                <option value="intermediate">Intermediate (Contextual & reasoned)</option>
+                <option value="advanced">Advanced (Theological & philosophical)</option>
+                <option value="researcher">Researcher (Comparative & textual analysis)</option>
               </select>
             </div>
 
             {/* Response Length */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Target Response Length
+              <label className="block text-xs font-bold text-[#58635B] uppercase tracking-wider mb-2">
+                Preferred Response Length
               </label>
               <select
                 value={prefs.responseLength}
                 onChange={(e) =>
                   setPrefs({ ...prefs, responseLength: e.target.value as any })
                 }
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/60"
+                className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs md:text-sm text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
               >
-                <option value="short">Short & Concise (Key points only)</option>
-                <option value="moderate">Moderate (Standard 3-4 paragraphs)</option>
-                <option value="detailed">Detailed (Comprehensive exploration)</option>
+                <option value="short">Concise & Direct (Essential takeaway)</option>
+                <option value="moderate">Moderate (Standard balanced view)</option>
+                <option value="detailed">Exhaustive & Detailed (Deep study)</option>
               </select>
             </div>
 
-            {/* Explanation Style */}
+            {/* Primary Learning Objective */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Explanation Style
+              <label className="block text-xs font-bold text-[#58635B] uppercase tracking-wider mb-2">
+                Learning Objective
               </label>
               <select
-                value={prefs.explanationStyle}
+                value={prefs.learningObjectives?.[0] || 'general_knowledge'}
                 onChange={(e) =>
-                  setPrefs({ ...prefs, explanationStyle: e.target.value as any })
+                  setPrefs({ ...prefs, learningObjectives: [e.target.value as any] })
                 }
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/60"
+                className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs md:text-sm text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
               >
-                <option value="reflective">Reflective (Introspective & spiritually inspiring)</option>
-                <option value="analytical">Analytical (Structured, logical, and thematic)</option>
-                <option value="simplified">Simplified (Accessible & direct)</option>
-                <option value="scholarly">Scholarly (Academic, citing historical transmissions)</option>
+                <option value="general_knowledge">General Knowledge & Literacy</option>
+                <option value="spiritual_development">Spiritual Contemplation (Irfan)</option>
+                <option value="leadership">Leadership & Governance</option>
+                <option value="academic_research">Academic & Scholarly Research</option>
+                <option value="ethics">Ethics & Moral Character</option>
+                <option value="character_development">Self-Discipline & Tazkiyah</option>
               </select>
             </div>
-          </div>
-
-          {/* Toggle show Arabic */}
-          <div className="pt-2 flex items-center justify-between border-t border-slate-800">
-            <div>
-              <p className="text-xs font-bold text-white">Always Display Original Arabic Text</p>
-              <p className="text-[11px] text-slate-400">
-                Presents the sacred Arabic parallel text alongside all AI explanations.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={prefs.accessibility?.showArabicText ?? true}
-              onChange={(e) =>
-                setPrefs({
-                  ...prefs,
-                  accessibility: {
-                    ...prefs.accessibility,
-                    showArabicText: e.target.checked,
-                  },
-                })
-              }
-              className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-            />
           </div>
         </div>
 
-        {/* Topics of Interest */}
-        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-4">
-          <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-            Topics of Active Interest
-          </h2>
-          <p className="text-xs text-slate-300">
-            Select the themes that matter most to your studies. The RAG system will prioritize these
-            connections when answering questions.
-          </p>
+        {/* Topics of Interest Card */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#ECE7DE] shadow-xs space-y-4">
+          <div>
+            <h2 className="text-base font-serif font-bold text-[#18231C]">
+              Areas of Special Interest
+            </h2>
+            <p className="text-xs text-[#58635B] mt-1">
+              Select key domains to personalize your daily wisdom, suggestions, and learning syllabus.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          <div className="flex flex-wrap gap-2 pt-2">
             {AVAILABLE_TOPICS.map((topic) => {
               const isSelected = prefs.topicsOfInterest?.includes(topic.id);
               return (
-                <div
+                <button
+                  type="button"
                   key={topic.id}
                   onClick={() => toggleTopic(topic.id)}
-                  className={`p-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center justify-between ${
+                  className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
                     isSelected
-                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#143E2E] text-white shadow-xs'
+                      : 'bg-[#FBF9F5] border border-[#ECE7DE] text-[#58635B] hover:border-[#143E2E]/30'
                   }`}
                 >
-                  <span>{topic.name}</span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                </div>
+                  {topic.name}
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Actions Bar */}
+        {/* Save Bar */}
         <div className="flex items-center justify-between pt-2">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-red-400 transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset to Defaults</span>
-          </button>
+          {success ? (
+            <span className="text-xs font-semibold text-[#143E2E] flex items-center gap-1.5 bg-[#EBF3EE] px-4 py-2 rounded-full">
+              <Check className="w-4 h-4" />
+              Preferences saved successfully!
+            </span>
+          ) : (
+            <span className="text-xs text-[#8E877D]">
+              Preferences are synchronized with your profile.
+            </span>
+          )}
 
-          <div className="flex items-center gap-3">
-            {success && (
-              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" />
-                Preferences Updated!
-              </span>
-            )}
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all"
-            >
-              <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save Preferences'}</span>
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2.5 rounded-full bg-[#143E2E] hover:bg-[#194B37] text-white font-bold text-xs shadow-xs transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>{saving ? 'Saving...' : 'Save Preferences'}</span>
+          </button>
         </div>
       </form>
     </div>

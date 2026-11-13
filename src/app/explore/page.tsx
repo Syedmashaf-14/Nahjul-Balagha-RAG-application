@@ -9,9 +9,34 @@ import {
   Bookmark,
   Sparkles,
   Check,
-  Compass,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 import { RetrievedDocument, PassageType } from '@/types/passage.types';
+
+// Arabic calligraphy tags mapping for aesthetic arch motifs
+const ARABIC_MOTIFS: Record<string, string> = {
+  justice: 'عدل',
+  leadership: 'حكم',
+  patience: 'صبر',
+  knowledge: 'علم',
+  piety: 'تقوى',
+  character: 'نصح',
+  wisdom: 'حكمة',
+  governance: 'عدل',
+  ethics: 'خلق',
+};
+
+function getArchStyle(index: number) {
+  const styles = [
+    { bg: 'bg-[#DDECE3]', arabic: 'عدل' }, // Sage
+    { bg: 'bg-[#F0ECE1]', arabic: 'نصح' }, // Sand
+    { bg: 'bg-[#E2EAF0]', arabic: 'علم' }, // Sky
+    { bg: 'bg-[#EAE4DC]', arabic: 'حكمة' }, // Warm Stone
+    { bg: 'bg-[#E0EBE4]', arabic: 'تقوى' }, // Light Emerald
+  ];
+  return styles[index % styles.length];
+}
 
 function ExploreContent() {
   const searchParams = useSearchParams();
@@ -32,7 +57,7 @@ function ExploreContent() {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (t) params.set('type', t);
-    params.set('limit', '12');
+    params.set('limit', '18');
 
     fetch(`/api/passages/search?${params.toString()}`)
       .then((res) => res.json())
@@ -76,157 +101,193 @@ function ExploreContent() {
         }),
       });
       setBookmarkedId(doc.id);
-      setTimeout(() => setBookmarkedId(null), 2000);
+      setTimeout(() => setBookmarkedId(null), 2500);
     } catch (err) {
       console.error('Bookmark error:', err);
     }
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Compass className="w-7 h-7 text-emerald-400" />
-            Passage Explorer
-          </h1>
-          <p className="text-xs md:text-sm text-slate-400 mt-1">
-            Browse and search through sermons, letters, and sayings with parallel Arabic and English texts.
-          </p>
-        </div>
-
-        {/* Section Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900 border border-slate-800">
-          {[
-            { label: 'All', value: '' },
-            { label: 'Sermons (Khutbat)', value: 'sermon' },
-            { label: 'Letters (Kutub)', value: 'letter' },
-            { label: 'Sayings (Hikam)', value: 'saying' },
-          ].map((item) => (
-            <button
-              key={item.value}
-              onClick={() => handleTypeSelect(item.value)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                selectedType === item.value
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-7 pb-16 max-w-7xl mx-auto">
+      {/* Top Header */}
+      <div className="space-y-1">
+        <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
+          THE COLLECTION
+        </span>
+        <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
+          Explore the Nahj al-Balagha
+        </h1>
+        <p className="text-xs md:text-sm text-[#58635B]">
+          Discover sermons, letters, and sayings by theme, source, or question.
+        </p>
       </div>
 
-      {/* Search Input Bar */}
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Filter and Search Bar Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
+        {/* Search Input */}
+        <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8E877D]" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search concepts, quotes, or numbers (e.g. Letter 53, Sermon 193, Justice, Sabr)..."
-            className="w-full pl-11 pr-4 py-3 bg-slate-900/90 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/60 transition-all"
+            placeholder="Search the collection"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#ECE7DE] rounded-full text-xs md:text-sm text-[#18231C] placeholder-[#8E877D] shadow-sm focus:outline-none focus:border-[#143E2E]/40 focus:ring-1 focus:ring-[#143E2E]/30 transition-all"
           />
+        </form>
+
+        {/* Source Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { label: 'All sources', value: '' },
+            { label: 'Sermons', value: 'sermon' },
+            { label: 'Letters', value: 'letter' },
+            { label: 'Sayings', value: 'saying' },
+          ].map((item) => {
+            const isActive = selectedType === item.value;
+            return (
+              <button
+                key={item.value}
+                onClick={() => handleTypeSelect(item.value)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-[#143E2E] text-white shadow-sm'
+                    : 'bg-white border border-[#ECE7DE] text-[#58635B] hover:border-[#143E2E]/30 hover:text-[#18231C]'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-sm shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all"
-        >
-          Search
-        </button>
-      </form>
+      </div>
+
+      {/* Subheader: Results count & Sort */}
+      <div className="flex items-center justify-between text-xs text-[#8E877D] pt-1">
+        <span>{passages.length} curated results</span>
+        <div className="flex items-center gap-1 text-[#58635B] hover:text-[#18231C] cursor-pointer font-medium">
+          <span>Most relevant</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </div>
+      </div>
 
       {/* Passages Grid */}
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
-          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-3" />
-          <p className="text-xs">Retrieving passages from knowledge base...</p>
+        <div className="py-24 flex flex-col items-center justify-center text-[#58635B]">
+          <div className="w-8 h-8 rounded-full border-2 border-[#143E2E] border-t-transparent animate-spin mb-3" />
+          <p className="text-xs font-medium">Retrieving passages from knowledge base...</p>
         </div>
       ) : passages.length === 0 ? (
-        <div className="py-16 text-center glass-panel rounded-3xl border border-slate-800 p-8">
-          <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-200">No matching passages found</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Try adjusting your search terms or select another category like Sermons or Sayings.
+        <div className="py-20 text-center bg-white rounded-3xl border border-[#ECE7DE] p-8 shadow-sm">
+          <BookOpen className="w-10 h-10 text-[#8E877D] mx-auto mb-3" />
+          <h3 className="text-base font-bold text-[#18231C]">No matching passages found</h3>
+          <p className="text-xs text-[#58635B] mt-1 max-w-sm mx-auto">
+            Try adjusting your search terms or select another category like Sermons, Letters, or Sayings.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {passages.map((doc) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {passages.map((doc, idx) => {
             const meta = doc.metadata;
+            const arch = getArchStyle(idx);
+            const topicKey = meta.topics?.[0]?.toLowerCase() || '';
+            const arabicWord = ARABIC_MOTIFS[topicKey] || arch.arabic;
+            const isBookmarked = bookmarkedId === doc.id;
+
             return (
               <div
                 key={doc.id}
-                className="glass-panel glass-panel-hover rounded-3xl p-6 border border-slate-800/90 flex flex-col justify-between space-y-4"
+                className="bg-white rounded-2xl border border-[#ECE7DE] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-3">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        {meta.passageType} #{meta.passageNumber}
-                      </span>
-                      <h3 className="text-base font-bold text-white mt-1.5 line-clamp-1">
-                        {meta.passageTitle}
-                      </h3>
+                  {/* Top Arch Illustration Area */}
+                  <div
+                    className={`h-40 ${arch.bg} relative p-4 flex flex-col justify-between overflow-hidden`}
+                  >
+                    {/* Concentric subtle background curves */}
+                    <div className="absolute right-0 top-0 bottom-0 w-36 pointer-events-none opacity-20">
+                      <div className="w-48 h-48 rounded-full border border-[#143E2E] absolute -top-10 -right-10" />
+                      <div className="w-36 h-36 rounded-full border border-[#143E2E] absolute top-2 right-2" />
                     </div>
 
-                    <button
-                      onClick={() => handleBookmark(doc)}
-                      className={`p-2 rounded-xl border transition-colors ${
-                        bookmarkedId === doc.id
-                          ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400'
-                      }`}
-                      title="Bookmark passage"
-                    >
-                      {bookmarkedId === doc.id ? (
-                        <Check className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <Bookmark className="w-4 h-4" />
-                      )}
-                    </button>
+                    {/* Top Row: Type Pill & Bookmark Button */}
+                    <div className="flex items-center justify-between relative z-10">
+                      <span className="text-[10px] font-bold tracking-widest text-[#58635B] uppercase bg-white/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#ECE7DE]/50">
+                        {meta.passageType}
+                      </span>
+
+                      <button
+                        onClick={() => handleBookmark(doc)}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-xs ${
+                          isBookmarked
+                            ? 'bg-[#143E2E] text-white'
+                            : 'bg-white/80 hover:bg-white text-[#58635B] hover:text-[#143E2E] border border-[#ECE7DE]/80'
+                        }`}
+                        title="Save passage"
+                      >
+                        {isBookmarked ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <Bookmark className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Center Arch Motif with Calligraphy */}
+                    <div className="flex justify-center items-end relative z-10">
+                      <div className="w-16 h-20 rounded-t-full bg-white/85 border border-[#ECE7DE] flex items-center justify-center shadow-xs">
+                        <span className="font-arabic text-2xl text-[#143E2E] font-medium leading-none pt-1">
+                          {arabicWord}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {meta.arabicOriginal && (
-                    <div className="my-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-850">
-                      <p className="font-arabic text-lg text-amber-100 text-right leading-loose">
-                        {meta.arabicOriginal.length > 250
-                          ? meta.arabicOriginal.substring(0, 250) + '...'
-                          : meta.arabicOriginal}
-                      </p>
-                    </div>
-                  )}
+                  {/* Body Content */}
+                  <div className="p-5 space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D] block">
+                      {meta.passageType} {meta.passageNumber}
+                    </span>
 
-                  <p className="text-xs md:text-sm text-slate-300 leading-relaxed italic border-l-2 border-emerald-500/30 pl-3">
-                    &ldquo;{doc.content.length > 350
-                      ? doc.content.substring(0, 350) + '...'
-                      : doc.content}&rdquo;
-                  </p>
+                    <h3 className="text-base font-serif font-bold text-[#18231C] group-hover:text-[#143E2E] transition-colors line-clamp-1">
+                      {meta.passageTitle || `${meta.passageType} #${meta.passageNumber}`}
+                    </h3>
+
+                    {/* Original Arabic Text (if present) */}
+                    {meta.arabicOriginal && (
+                      <p className="font-arabic text-sm text-[#143E2E] text-right leading-loose py-1 border-b border-[#ECE7DE]/60 line-clamp-2">
+                        {meta.arabicOriginal}
+                      </p>
+                    )}
+
+                    <p className="text-xs text-[#58635B] leading-relaxed line-clamp-2 pt-1">
+                      {doc.content}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between">
-                  <div className="flex flex-wrap gap-1">
-                    {meta.topics?.slice(0, 2).map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-900 text-slate-400 border border-slate-800"
-                      >
-                        #{t}
+                {/* Card Footer */}
+                <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-[#ECE7DE]/60 mt-auto">
+                  <div className="flex items-center gap-2">
+                    {meta.topics?.[0] && (
+                      <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#F5F2EB] text-[#58635B] border border-[#ECE7DE]">
+                        {meta.topics[0]}
                       </span>
-                    ))}
+                    )}
+                    <span className="text-[10px] text-[#8E877D] flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {Math.max(3, Math.round((doc.content?.length || 600) / 250))} min
+                    </span>
                   </div>
 
                   <Link
                     href={`/chat?q=${encodeURIComponent(
                       `Explain ${meta.passageType} #${meta.passageNumber} in Nahj al-Balagha: "${meta.passageTitle}"`
                     )}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#143E2E] hover:underline"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Explore with AI</span>
+                    <Sparkles className="w-3 h-3" />
+                    <span>Explore</span>
                   </Link>
                 </div>
               </div>
@@ -240,7 +301,13 @@ function ExploreContent() {
 
 export default function ExplorePage() {
   return (
-    <Suspense fallback={<div className="py-20 text-center text-slate-400 text-xs">Loading explorer...</div>}>
+    <Suspense
+      fallback={
+        <div className="py-24 text-center text-[#58635B] text-xs">
+          Loading explorer...
+        </div>
+      }
+    >
       <ExploreContent />
     </Suspense>
   );

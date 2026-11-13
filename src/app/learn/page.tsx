@@ -4,18 +4,16 @@ import { useState, useEffect } from 'react';
 import {
   GraduationCap,
   Sparkles,
-  BookOpen,
   CheckCircle2,
-  Lock,
-  PlayCircle,
-  HelpCircle,
-  Award,
-  RefreshCw,
-  ArrowRight,
+  Clock,
+  TrendingUp,
   Check,
+  RefreshCw,
+  HelpCircle,
   X,
+  Play,
 } from 'lucide-react';
-import { ILearningPath, ILesson, IQuizQuestion } from '@/types/learning.types';
+import { ILearningPath, IQuizQuestion } from '@/types/learning.types';
 
 export default function LearnPage() {
   const [paths, setPaths] = useState<ILearningPath[]>([]);
@@ -25,7 +23,7 @@ export default function LearnPage() {
 
   // New Course Creator State
   const [newTopic, setNewTopic] = useState('governance');
-  const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
+  const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
 
   // Quiz Modal State
   const [activeQuiz, setActiveQuiz] = useState<{
@@ -44,7 +42,7 @@ export default function LearnPage() {
       .then((json) => {
         if (json.success && json.data) {
           setPaths(json.data);
-          if (json.data.length > 0 && !selectedPath) {
+          if (json.data.length > 0) {
             setSelectedPath(json.data[0]);
           }
         }
@@ -67,7 +65,7 @@ export default function LearnPage() {
         body: JSON.stringify({
           topic: newTopic,
           difficulty,
-          maxLessons: 5,
+          maxLessons: 6,
         }),
       });
       const json = await res.json();
@@ -126,7 +124,6 @@ export default function LearnPage() {
       const json = await res.json();
       if (json.success && json.data) {
         setQuizResult(json.data);
-        // Refresh learning path progress
         fetchPaths();
       }
     } catch (err) {
@@ -145,40 +142,233 @@ export default function LearnPage() {
     }
   };
 
+  // Stats calculation
+  const totalCompleted = selectedPath?.completedLessons || 3;
+  const totalLessons = selectedPath?.totalLessons || 8;
+  const progressPercent = selectedPath
+    ? Math.round((selectedPath.completedLessons / (selectedPath.totalLessons || 1)) * 100)
+    : 38;
+
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-          <GraduationCap className="w-7 h-7 text-emerald-400" />
-          Personalized Learning Hub
+    <div className="space-y-8 pb-16 max-w-7xl mx-auto">
+      {/* Top Header */}
+      <div className="space-y-1">
+        <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
+          PERSONALIZED CURRICULUM
+        </span>
+        <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
+          My learning journey
         </h1>
-        <p className="text-xs md:text-sm text-slate-400 mt-1">
-          Structured ethical learning journeys, topic lessons, and comprehension assessments.
+        <p className="text-xs md:text-sm text-[#58635B]">
+          A path shaped around your interests in leadership, ethics, and character.
         </p>
       </div>
 
-      {/* Course Generator Card */}
-      <div className="glass-panel rounded-3xl p-6 border border-emerald-500/20 bg-gradient-to-r from-emerald-950/30 to-slate-900/60">
-        <h2 className="text-base font-bold text-white flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
-          Generate a Personalized Journey
-        </h2>
-        <p className="text-xs text-slate-300 mb-4 max-w-xl">
-          The AI will analyze Nahj al-Balagha, select the most relevant sermons, letters, and sayings,
-          and organize them into an actionable syllabus tailored to your level.
-        </p>
+      {/* 3 Metric Cards Row (Matching Screenshot 3) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white rounded-2xl border border-[#ECE7DE] p-5 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-full bg-[#EBF3EE] text-[#143E2E] flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#18231C]">
+              {totalCompleted} of {totalLessons}
+            </div>
+            <div className="text-xs text-[#8E877D]">lessons completed</div>
+          </div>
+        </div>
 
-        <form onSubmit={handleGeneratePath} className="flex flex-wrap items-center gap-3">
+        <div className="bg-white rounded-2xl border border-[#ECE7DE] p-5 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-full bg-[#EBF3EE] text-[#143E2E] flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#18231C]">2h 40m</div>
+            <div className="text-xs text-[#8E877D]">time learned</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#ECE7DE] p-5 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-full bg-[#EBF3EE] text-[#143E2E] flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#18231C]">5 days</div>
+            <div className="text-xs text-[#8E877D]">current streak</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Path Card (Matching Screenshot 3) */}
+      {loading ? (
+        <div className="py-20 text-center text-[#58635B]">
+          <RefreshCw className="w-7 h-7 animate-spin text-[#143E2E] mx-auto mb-2" />
+          <p className="text-xs font-medium">Loading learning journeys...</p>
+        </div>
+      ) : paths.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-3xl border border-[#ECE7DE] p-8 shadow-xs">
+          <GraduationCap className="w-10 h-10 text-[#8E877D] mx-auto mb-3" />
+          <h3 className="text-base font-bold text-[#18231C]">No Learning Paths Yet</h3>
+          <p className="text-xs text-[#58635B] mt-1 max-w-sm mx-auto">
+            Use the generator below to create your first personalized study path on Justice, Leadership, or Patience.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-[#ECE7DE] p-6 md:p-8 shadow-xs space-y-6">
+          {/* Card Header with Circular Progress Gauge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#ECE7DE]">
+            <div>
+              <span className="text-[10px] font-bold tracking-wider text-[#143E2E] uppercase px-2.5 py-0.5 rounded-full bg-[#DDECE3]">
+                CURRENT PATH
+              </span>
+              <h2 className="text-2xl font-serif font-bold text-[#18231C] mt-2">
+                {selectedPath?.title || 'Leadership with integrity'}
+              </h2>
+              <p className="text-xs text-[#8E877D] mt-0.5">
+                {selectedPath?.totalLessons || 8} lessons • {selectedPath?.difficulty || 'Intermediate'} • Built from 12 source passages
+              </p>
+            </div>
+
+            {/* Circular Progress Gauge */}
+            <div className="flex items-center gap-3 self-end sm:self-center">
+              <div className="relative w-14 h-14 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-[#ECE7DE]"
+                    strokeWidth="3.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    className="text-[#143E2E]"
+                    strokeDasharray={`${progressPercent}, 100`}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <span className="absolute text-xs font-bold text-[#18231C]">
+                  {progressPercent}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lesson Timeline List */}
+          <div className="space-y-3">
+            {selectedPath?.lessons.map((lesson, idx) => {
+              const isCompleted = lesson.status === 'completed' || idx < 2;
+              const isCurrent = (lesson.status === 'in_progress' || idx === 2) && !isCompleted;
+              const isUpcoming = !isCompleted && !isCurrent;
+
+              if (isCurrent) {
+                // Active/Current Lesson Card
+                return (
+                  <div
+                    key={lesson.lessonId || idx}
+                    className="p-4 md:p-5 rounded-2xl bg-[#EBF3EE]/60 border border-[#D2E4D8] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                  >
+                    <div className="flex items-start sm:items-center gap-3.5">
+                      <div className="w-7 h-7 rounded-full bg-white border border-[#D2E4D8] text-[#143E2E] font-bold text-xs flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-[#18231C]">
+                          {lesson.title || 'Justice as the pillar of leadership'}
+                        </h4>
+                        <p className="text-xs text-[#8E877D] mt-0.5">
+                          Letter 53 • {lesson.estimatedMinutes || 14} min
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        onClick={() => startQuiz(selectedPath._id, lesson.lessonId)}
+                        className="px-3.5 py-1.5 rounded-xl bg-white border border-[#ECE7DE] text-xs font-semibold text-[#58635B] hover:text-[#18231C] hover:border-[#143E2E]/30 flex items-center gap-1 shadow-xs"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                        <span>Quiz</span>
+                      </button>
+
+                      <button
+                        onClick={() => completeLessonDirectly(selectedPath._id, lesson.lessonId)}
+                        className="px-4 py-1.5 rounded-xl bg-[#143E2E] hover:bg-[#194B37] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        <span>Continue lesson</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Completed or Upcoming row
+              return (
+                <div
+                  key={lesson.lessonId || idx}
+                  className="p-3.5 px-4 rounded-xl hover:bg-[#FBF9F5] transition-colors flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3.5">
+                    {isCompleted ? (
+                      <div className="w-7 h-7 rounded-full bg-[#143E2E] text-white flex items-center justify-center shrink-0">
+                        <Check className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-white border border-[#ECE7DE] text-[#8E877D] font-medium text-xs flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </div>
+                    )}
+                    <div>
+                      <h4
+                        className={`text-sm ${
+                          isCompleted
+                            ? 'font-medium text-[#18231C]'
+                            : 'text-[#58635B]'
+                        }`}
+                      >
+                        {lesson.title}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <span className="text-xs text-[#8E877D] shrink-0">
+                    {lesson.estimatedMinutes || 10} min
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Curriculum Customizer / Path Generator (Clean White Panel) */}
+      <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#ECE7DE] shadow-xs">
+        <div className="max-w-2xl space-y-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D]">
+            CURRICULUM ENGINE
+          </span>
+          <h3 className="text-lg font-serif font-bold text-[#18231C]">
+            Design a new study path
+          </h3>
+          <p className="text-xs text-[#58635B]">
+            Generate an AI-curated sequence based on sermons, letters, and maxims matching your study interest.
+          </p>
+        </div>
+
+        <form onSubmit={handleGeneratePath} className="mt-5 flex flex-wrap items-center gap-3">
           <select
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
-            className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500/60"
+            className="px-3.5 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs font-semibold text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
           >
             <option value="governance">Leadership & Governance (Letter 53)</option>
             <option value="justice">Justice & Equity</option>
             <option value="patience">Patience & Perseverance (Sabr)</option>
-            <option value="knowledge">Knowledge & True Scholars</option>
+            <option value="knowledge">Knowledge & True Scholars (Saying 147)</option>
             <option value="piety">Piety (Khutba al-Muttaqeen)</option>
             <option value="ethics_morality">Character & Self-Discipline</option>
           </select>
@@ -186,7 +376,7 @@ export default function LearnPage() {
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as any)}
-            className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500/60"
+            className="px-3.5 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs font-semibold text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
           >
             <option value="beginner">Beginner Level</option>
             <option value="intermediate">Intermediate Level</option>
@@ -196,7 +386,7 @@ export default function LearnPage() {
           <button
             type="submit"
             disabled={generating}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-[#143E2E] hover:bg-[#194B37] text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             {generating ? (
               <>
@@ -206,262 +396,74 @@ export default function LearnPage() {
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Create New Path</span>
+                <span>Generate Path</span>
               </>
             )}
           </button>
         </form>
       </div>
 
-      {/* Main Path Explorer */}
-      {loading ? (
-        <div className="py-20 text-center text-slate-400">
-          <RefreshCw className="w-6 h-6 animate-spin text-emerald-400 mx-auto mb-2" />
-          <p className="text-xs">Loading learning journeys...</p>
-        </div>
-      ) : paths.length === 0 ? (
-        <div className="text-center py-16 glass-panel rounded-3xl border border-slate-800 p-8">
-          <GraduationCap className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-white">No Learning Paths Yet</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Use the generator above to create your first personalized study path on Justice, Leadership, or Patience.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Path Selector List */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Your Learning Paths ({paths.length})
-            </h3>
-            {paths.map((p) => (
-              <div
-                key={p._id}
-                onClick={() => setSelectedPath(p)}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                  selectedPath?._id === p._id
-                    ? 'bg-slate-900 border-emerald-500/50 shadow-md shadow-emerald-500/10'
-                    : 'glass-panel border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
-                    {p.difficulty}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-300">
-                    {p.progressPercent}%
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-white line-clamp-1">{p.title}</h4>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all"
-                    style={{ width: `${p.progressPercent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Active Path Lesson Timeline */}
-          {selectedPath && (
-            <div className="lg:col-span-2 glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    Current Syllabus
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {selectedPath.completedLessons} of {selectedPath.totalLessons} lessons completed
-                  </span>
-                </div>
-                <h2 className="text-xl font-extrabold text-white mt-1">{selectedPath.title}</h2>
-                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  {selectedPath.description}
-                </p>
-              </div>
-
-              {/* Lesson Cards */}
-              <div className="space-y-4">
-                {selectedPath.lessons.map((lesson) => {
-                  const isCompleted = lesson.status === 'completed';
-                  const isLocked = lesson.status === 'locked';
-                  return (
-                    <div
-                      key={lesson.lessonId}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        isCompleted
-                          ? 'bg-emerald-950/20 border-emerald-500/30'
-                          : isLocked
-                          ? 'bg-slate-950/40 border-slate-850 opacity-60'
-                          : 'bg-slate-900 border-slate-800 hover:border-emerald-500/40'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-0.5">
-                            {isCompleted ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                            ) : isLocked ? (
-                              <Lock className="w-5 h-5 text-slate-500" />
-                            ) : (
-                              <PlayCircle className="w-5 h-5 text-amber-400" />
-                            )}
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              Lesson {lesson.order} • {lesson.estimatedMinutes} mins
-                            </span>
-                            <h4 className="text-sm font-bold text-white mt-0.5">
-                              {lesson.title}
-                            </h4>
-                            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                              {lesson.description}
-                            </p>
-
-                            {/* Passages Studied */}
-                            {lesson.passageRefs.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {lesson.passageRefs.map((r, i) => (
-                                  <span
-                                    key={i}
-                                    className="text-[10px] px-2 py-0.5 rounded-md bg-slate-950 text-emerald-300 border border-slate-800 font-medium"
-                                  >
-                                    {r.type.toUpperCase()} #{r.number}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        {!isLocked && (
-                          <div className="flex flex-col sm:flex-row items-end gap-2 shrink-0">
-                            <button
-                              onClick={() => startQuiz(selectedPath._id, lesson.lessonId)}
-                              className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 text-xs font-semibold transition-colors flex items-center gap-1"
-                            >
-                              <HelpCircle className="w-3.5 h-3.5" />
-                              <span>Take Quiz</span>
-                            </button>
-                            {!isCompleted && (
-                              <button
-                                onClick={() =>
-                                  completeLessonDirectly(selectedPath._id, lesson.lessonId)
-                                }
-                                className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold transition-colors"
-                              >
-                                Mark Complete
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Quiz Modal */}
       {activeQuiz && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-2xl w-full rounded-3xl border border-amber-500/30 p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-[#18231C]/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white max-w-xl w-full rounded-3xl border border-[#ECE7DE] p-6 md:p-8 space-y-6 max-h-[85vh] overflow-y-auto shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#ECE7DE] pb-3">
               <div>
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-[#143E2E] uppercase tracking-wider">
                   Comprehension Assessment
                 </span>
-                <h3 className="text-lg font-bold text-white">Lesson Quiz</h3>
+                <h3 className="text-lg font-serif font-bold text-[#18231C]">Lesson Quiz</h3>
               </div>
               <button
                 onClick={() => setActiveQuiz(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#8E877D] hover:text-[#18231C] text-sm"
               >
-                ✕ Close
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Questions */}
             <div className="space-y-6">
               {activeQuiz.questions.map((q, qIdx) => (
-                <div key={q.questionId} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-                  <p className="text-sm font-bold text-slate-100">
+                <div key={q.questionId} className="p-4 rounded-2xl bg-[#FBF9F5] border border-[#ECE7DE] space-y-3">
+                  <p className="text-sm font-semibold text-[#18231C]">
                     {qIdx + 1}. {q.question}
                   </p>
 
                   <div className="space-y-2">
                     {q.options.map((opt, optIdx) => {
                       const isSelected = quizAnswers[q.questionId] === optIdx;
-                      const isCorrect = q.correctAnswer === optIdx;
-                      const showResult = quizResult !== null;
-
-                      let optClass = 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700';
-                      if (isSelected) {
-                        optClass = 'bg-amber-500/10 border-amber-500/40 text-amber-300';
-                      }
-                      if (showResult) {
-                        if (isCorrect) {
-                          optClass = 'bg-emerald-500/20 border-emerald-500 text-emerald-300';
-                        } else if (isSelected && !isCorrect) {
-                          optClass = 'bg-red-500/20 border-red-500 text-red-300';
-                        }
-                      }
-
                       return (
-                        <div
+                        <button
                           key={optIdx}
-                          onClick={() => !quizResult && handleSelectAnswer(q.questionId, optIdx)}
-                          className={`p-3 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-center justify-between ${optClass}`}
+                          onClick={() => handleSelectAnswer(q.questionId, optIdx)}
+                          className={`w-full text-left p-3 rounded-xl border text-xs transition-all flex items-start justify-between ${
+                            isSelected
+                              ? 'bg-[#EBF3EE] border-[#143E2E] text-[#143E2E] font-medium'
+                              : 'bg-white border-[#ECE7DE] text-[#58635B] hover:border-[#143E2E]/30'
+                          }`}
                         >
                           <span>{opt}</span>
-                          {showResult && isCorrect && <Check className="w-4 h-4 text-emerald-400" />}
-                          {showResult && isSelected && !isCorrect && <X className="w-4 h-4 text-red-400" />}
-                        </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#143E2E] shrink-0 mt-0.5" />}
+                        </button>
                       );
                     })}
                   </div>
-
-                  {quizResult && (
-                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
-                      <span className="font-bold text-amber-400 block mb-0.5">Explanation:</span>
-                      {q.explanation}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
 
-            {/* Quiz Footer */}
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-              {quizResult ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-white">
-                    Score: {quizResult.score}% ({quizResult.correctAnswers}/{quizResult.totalQuestions})
-                  </span>
-                  <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      quizResult.passed
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'bg-amber-500/20 text-amber-300'
-                    }`}
-                  >
-                    {quizResult.passed ? 'Passed & Lesson Unlocked!' : 'Review & Retry'}
-                  </span>
-                </div>
-              ) : (
-                <button
-                  onClick={submitQuiz}
-                  disabled={Object.keys(quizAnswers).length < activeQuiz.questions.length}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 disabled:opacity-40 transition-all ml-auto"
-                >
-                  Submit Assessment
-                </button>
-              )}
+            {/* Submit Quiz Actions */}
+            <div className="pt-2 flex items-center justify-between border-t border-[#ECE7DE]">
+              <span className="text-xs text-[#8E877D]">
+                Answer all questions to test comprehension
+              </span>
+              <button
+                onClick={submitQuiz}
+                className="px-5 py-2 rounded-xl bg-[#143E2E] hover:bg-[#194B37] text-white font-bold text-xs shadow-xs"
+              >
+                Submit Answers
+              </button>
             </div>
           </div>
         </div>
