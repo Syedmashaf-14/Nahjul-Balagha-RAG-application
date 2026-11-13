@@ -26,36 +26,42 @@ export async function POST(req: NextRequest) {
 
     const { message, passageRef, overrides } = validated.data;
     let conversationId = validated.data.conversationId;
+    let conversationSummary: string | null = null;
 
-    // Create a new conversation if not specified
-    if (!conversationId) {
-      const title =
-        message.length > 50
-          ? `${message.substring(0, 47)}...`
-          : message;
+    try {
+      // Create a new conversation if not specified
+      if (!conversationId) {
+        const title =
+          message.length > 50
+            ? `${message.substring(0, 47)}...`
+            : message;
 
-      const newConv = await conversationRepository.createConversation({
+        const newConv = await conversationRepository.createConversation({
+          userId,
+          title,
+          type: passageRef ? 'passage_exploration' : 'general',
+          passageRef,
+        });
+        conversationId = newConv._id.toString();
+      }
+
+      // Record user message in MongoDB
+      await conversationRepository.addMessage({
+        conversationId,
         userId,
-        title,
-        type: passageRef ? 'passage_exploration' : 'general',
-        passageRef,
+        role: 'user',
+        content: message,
       });
-      conversationId = newConv._id.toString();
+
+      // Fetch conversation summary or recent messages to provide sliding conversational memory
+      const recentMessages = await conversationRepository.getMessages(conversationId, userId, 6);
+      conversationSummary = recentMessages
+        .map((m) => `${m.role.toUpperCase()}: ${m.content.substring(0, 200)}`)
+        .join('\n');
+    } catch (dbErr) {
+      console.warn('MongoDB conversation persistence skipped (offline/connecting):', (dbErr as any)?.message);
+      conversationId = conversationId || `conv-${Date.now()}`;
     }
-
-    // Record user message in MongoDB
-    await conversationRepository.addMessage({
-      conversationId,
-      userId,
-      role: 'user',
-      content: message,
-    });
-
-    // Fetch conversation summary or recent messages to provide sliding conversational memory
-    const recentMessages = await conversationRepository.getMessages(conversationId, userId, 6);
-    const conversationSummary = recentMessages
-      .map((m) => `${m.role.toUpperCase()}: ${m.content.substring(0, 200)}`)
-      .join('\n');
 
     // Run Personalized RAG Pipeline
     const ragResult = await ragService.generateAnswer(
@@ -69,22 +75,28 @@ export async function POST(req: NextRequest) {
     );
 
     // Record assistant's grounded response in MongoDB with exact citations
-    const savedAssistantMsg = await conversationRepository.addMessage({
-      conversationId,
-      userId,
-      role: 'assistant',
-      content: ragResult.answer,
-      citations: ragResult.citations,
-      metadata: {
-        model: 'gpt-4o',
-        personalizationApplied: true,
-        documentsRetrieved: ragResult.citations.length,
-      },
-    });
+    let messageId = Date.now().toString();
+    try {
+      const savedAssistantMsg = await conversationRepository.addMessage({
+        conversationId,
+        userId,
+        role: 'assistant',
+        content: ragResult.answer,
+        citations: ragResult.citations,
+        metadata: {
+          model: 'openai/gpt-4o-mini',
+          personalizationApplied: true,
+          documentsRetrieved: ragResult.citations.length,
+        },
+      });
+      messageId = savedAssistantMsg._id.toString();
+    } catch (dbErr) {
+      console.warn('MongoDB message persistence skipped (offline/connecting):', (dbErr as any)?.message);
+    }
 
     const payload: ChatResponsePayload = {
       conversationId,
-      messageId: savedAssistantMsg._id.toString(),
+      messageId,
       content: ragResult.answer,
       citations: ragResult.citations,
       relatedTopics: ragResult.relatedTopics,

@@ -21,9 +21,14 @@ export class RAGService {
   ): Promise<RAGResponse> {
     const startTime = Date.now();
 
-    // 1. Fetch user preferences from MongoDB
-    const userPrefsDoc = await userPreferencesRepository.getByUserId(userId);
-    let preferences: UserPreferences = UserPreferencesSchema.parse(userPrefsDoc.toObject());
+    // 1. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
+    let preferences: UserPreferences;
+    try {
+      const userPrefsDoc = await userPreferencesRepository.getByUserId(userId);
+      preferences = UserPreferencesSchema.parse(userPrefsDoc.toObject());
+    } catch {
+      preferences = UserPreferencesSchema.parse({});
+    }
 
     // Apply per-request overrides if provided
     if (request.overrides) {
@@ -107,7 +112,8 @@ TOPICS: <topic1>, <topic2>`;
           .filter(Boolean);
         cleanAnswer = cleanAnswer.replace(/TOPICS:[\s\S]*/i, '').trim();
       }
-    } catch {
+    } catch (llmErr) {
+      console.warn('RAG LLM invocation failed:', (llmErr as any)?.message);
       // Offline/Local synthesis based on authentic retrieved passages
       if (retrievedDocs.length > 0) {
         const topDoc = retrievedDocs[0];
