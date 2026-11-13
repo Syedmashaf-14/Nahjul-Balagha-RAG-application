@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // ─── Passage Types ───────────────────────────────────────────────────────────
 
-export const PassageTypeEnum = z.enum(['sermon', 'letter', 'saying']);
+export const PassageTypeEnum = z.enum(['sermon', 'letter', 'saying', 'dua']);
 export type PassageType = z.infer<typeof PassageTypeEnum>;
 
 export const ContentTypeEnum = z.enum(['original', 'translation', 'commentary']);
@@ -51,6 +51,8 @@ export interface ChunkMetadata {
   chunkIndex: number;
   totalChunks: number;
   arabicOriginal: string | null;
+  urduTranslation?: string | null;
+  romanUrduTranslation?: string | null;
   topics: string[];
   ingestedAt: string;
   chunkSize: number;
@@ -117,6 +119,8 @@ export interface RawPassage {
   title?: string;
   arabicText?: string;
   translationText?: string;
+  urduTranslation?: string;
+  romanUrduTranslation?: string;
   language: string;
   translator?: string;
   commentary?: string;

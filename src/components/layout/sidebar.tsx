@@ -15,6 +15,7 @@ import {
   Check,
   MoreVertical,
   LogIn,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -54,6 +55,7 @@ export function Sidebar() {
             {[
               { name: 'Overview', href: '/', icon: Home },
               { name: 'Explore', href: '/explore', icon: Compass },
+              { name: 'Canonical Library & PDFs', href: '/reader', icon: BookOpen },
               { name: 'My learning', href: '/learn', icon: GraduationCap },
               { name: 'Saved', href: '/bookmarks', icon: Bookmark, badge: '1' },
               { name: 'Notes', href: '/notes', icon: FileText },

@@ -48,6 +48,8 @@ export class PassageChunker {
           chunkIndex: 0,
           totalChunks: 1,
           arabicOriginal: arabicClean,
+          urduTranslation: passage.urduTranslation || null,
+          romanUrduTranslation: passage.romanUrduTranslation || null,
           topics: passage.topics || [],
           ingestedAt: now,
           chunkSize: content.length,
@@ -113,6 +115,8 @@ export class PassageChunker {
           chunkIndex: idx,
           totalChunks: total,
           arabicOriginal: arabicClean,
+          urduTranslation: passage.urduTranslation || null,
+          romanUrduTranslation: passage.romanUrduTranslation || null,
           topics: passage.topics || [],
           ingestedAt: now,
           chunkSize: seg.length,
@@ -126,6 +130,7 @@ export class PassageChunker {
   private static inferPassageType(passage: RawPassage): PassageType {
     if (passage.chapter?.toLowerCase().includes('letter')) return 'letter';
     if (passage.chapter?.toLowerCase().includes('saying') || passage.chapter?.toLowerCase().includes('maxim')) return 'saying';
+    if (passage.chapter?.toLowerCase().includes('dua') || passage.chapter?.toLowerCase().includes('supplication')) return 'dua';
     return 'sermon';
   }
 }

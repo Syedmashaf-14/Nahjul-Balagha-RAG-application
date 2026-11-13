@@ -10,9 +10,47 @@ import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { RAGResponse, ChatRequest } from '../../types/conversation.types';
 import { UserPreferences, UserPreferencesSchema } from '../../types/user.types';
 
+function isOutOfDomainQuery(query: string): boolean {
+  const lower = query.toLowerCase();
+
+  // Sacred/domain terms that should never be blocked
+  const inDomainKeywords = [
+    'ali', 'imam', 'nahj', 'balagha', 'balaghah', 'sermon', 'khutbah', 'khutba',
+    'letter', 'maktoob', 'saying', 'hikmah', 'wisdom', 'justice', 'malik', 'ashtar',
+    'kumayl', 'hasan', 'hussain', 'islam', 'allah', 'prophet', 'governance', 'caliph',
+    'sabr', 'patience', 'taqwa', 'piety', 'aqil', 'muttaqeen', 'dua', 'prayer', 'ziyad',
+    'muhammad', 'quran', 'hadith', 'nahjul', 'balagah', 'ahlulbayt', 'shia', 'sunni',
+    'ghadir', 'kufa', 'siffin', 'jamal', 'nehj', 'nehjul'
+  ];
+  const hasInDomainKeyword = inDomainKeywords.some((kw) => lower.includes(kw));
+  if (hasInDomainKeyword) return false;
+
+  // Patterns that indicate general worldly questions outside Nahj al-Balagha
+  const outOfDomainPatterns = [
+    /\bcapital of\b/i,
+    /\bweather in\b/i,
+    /\bpopulation of\b/i,
+    /\bcurrency of\b/i,
+    /\brecipe for\b/i,
+    /\bwrite a python\b/i,
+    /\bwrite code\b/i,
+    /\bwho won the\b/i,
+    /\bpresident of\b/i,
+    /\bprime minister of\b/i,
+    /\bscore of\b/i,
+    /\bstock price\b/i,
+    /\bcricket\b/i,
+    /\bfootball\b/i,
+    /\bmovie\b/i,
+  ];
+
+  return outOfDomainPatterns.some((pattern) => pattern.test(query));
+}
+
 export class RAGService {
   /**
-   * Executes the full Personalized RAG pipeline.
+   * Executes the full Personalized RAG pipeline with strict religious accuracy
+   * and out-of-domain guardrail enforcement.
    */
   public async generateAnswer(
     userId: string,
@@ -21,7 +59,24 @@ export class RAGService {
   ): Promise<RAGResponse> {
     const startTime = Date.now();
 
-    // 1. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
+    // 1. Strict Domain Guardrail Check
+    if (isOutOfDomainQuery(request.message)) {
+      return {
+        answer:
+          'I am dedicated exclusively to Nahj al-Balagha and the sacred teachings, sermons, letters, sayings, and supplications of Imam Ali ibn Abi Talib (a.s.). I cannot answer general worldly queries outside this sacred scope (such as geography, general trivia, or modern topics).\n\nPlease feel free to ask about any sermon (Khutbah), letter on governance (such as Letter 53 to Malik al-Ashtar), maxim on wisdom, supplication (Du\'a), or moral guidance from Nahj al-Balagha.',
+        citations: [],
+        relatedTopics: ['Letter 53 on Governance', 'Saying 147 on Knowledge', 'Khutba al-Muttaqeen', 'Supplications of Imam Ali'],
+        suggestedFollowUps: [
+          'What are the core principles of governance in Letter 53?',
+          'How does Imam Ali describe knowledge vs wealth in Saying 147?',
+          'What are the characteristics of the pious in Sermon 193?',
+        ],
+        confidenceLevel: 'insufficient',
+        disclaimer: 'Out-of-domain query deflected to preserve strict focus on Nahj al-Balagha.',
+      };
+    }
+
+    // 2. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
     let preferences: UserPreferences;
     try {
       const userPrefsDoc = await userPreferencesRepository.getByUserId(userId);
@@ -38,17 +93,17 @@ export class RAGService {
       } as UserPreferences;
     }
 
-    // 2. Detect query language
+    // 3. Detect query language
     const detectedLang = LanguageDetector.detect(request.message);
 
-    // 3. Query reformulation
+    // 4. Query reformulation
     const searchReadyQuery = await queryRewriter.rewrite(
       request.message,
       conversationHistorySummary,
       detectedLang
     );
 
-    // 4. Retrieve candidate documents from the Vector Database
+    // 5. Retrieve candidate documents from the Vector Database
     const retrievedDocs = await knowledgeRetriever.retrieve(
       searchReadyQuery,
       6,
@@ -60,10 +115,10 @@ export class RAGService {
         : undefined
     );
 
-    // 5. Build structured citations
+    // 6. Build structured citations
     const citations = CitationBuilder.buildCitations(retrievedDocs);
 
-    // 6. Formulate system and context prompts
+    // 7. Formulate system and context prompts
     const systemPrompt = PromptBuilder.buildPersonalizedSystemPrompt(preferences);
     const contextText = PromptBuilder.formatContextDocuments(retrievedDocs);
 
@@ -75,11 +130,12 @@ ${contextText}
 
 INSTRUCTIONS:
 Provide an inspiring, accurate, and faithful response. If context is insufficient, explicitly state so.
+Always conclude your response with the formal Book Reference block as instructed in your system prompt.
 At the end of your response, on a new line, add:
 FOLLOW_UPS: <Question 1> | <Question 2> | <Question 3>
 TOPICS: <topic1>, <topic2>`;
 
-    // 7. Invoke LLM with resilient fallback
+    // 8. Invoke LLM with resilient fallback
     let cleanAnswer = '';
     let suggestedFollowUps: string[] = [];
     let relatedTopics: string[] = [];
@@ -92,7 +148,6 @@ TOPICS: <topic1>, <topic2>`;
       ]);
       const fullText = response.content.toString();
 
-      // 8. Extract follow-ups, topics, and clean answer
       cleanAnswer = fullText;
 
       const followUpMatch = fullText.match(/FOLLOW_UPS:\s*(.*)/i);
@@ -113,7 +168,7 @@ TOPICS: <topic1>, <topic2>`;
         cleanAnswer = cleanAnswer.replace(/TOPICS:[\s\S]*/i, '').trim();
       }
     } catch (llmErr) {
-      console.warn('RAG LLM invocation failed:', (llmErr as any)?.message);
+      console.warn('RAG LLM invocation fallback:', (llmErr as any)?.message);
       // Offline/Local synthesis based on authentic retrieved passages
       if (retrievedDocs.length > 0) {
         const topDoc = retrievedDocs[0];
@@ -124,6 +179,16 @@ TOPICS: <topic1>, <topic2>`;
       } else {
         cleanAnswer = `I have consulted the corpus of Nahj al-Balagha. To preserve strict religious integrity and avoid fabrication, I acknowledge that the specific reference directly answering this is not in the active knowledge base.`;
       }
+    }
+
+    // 9. Guarantee that every answer includes the formal Book Reference block
+    if (citations.length > 0 && !cleanAnswer.includes('Book Reference')) {
+      const topCitation = citations[0];
+      const arabicSnippet = topCitation.arabicText
+        ? `«${topCitation.arabicText.substring(0, 100)}...»`
+        : 'Available in original Arabic compilation';
+      const referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:\n- **Book:** Nahj al-Balagha (*Peak of Eloquence*) — Compiled by al-Sharif al-Radi (d. 406 AH)\n- **Source Category & Number:** ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber}\n- **Passage Title:** ${topCitation.passageType} #${topCitation.passageNumber}\n- **Original Arabic Reference:** ${arabicSnippet}\n- **Translator Reference:** ${topCitation.translator || 'Syed Ali Reza / Canonical Classical Text'}`;
+      cleanAnswer += referenceBlock;
     }
 
     // Fallbacks if LLM omitted them
@@ -151,7 +216,7 @@ TOPICS: <topic1>, <topic2>`;
         ? 'This explanation is general as no exact matching passages were found in the current knowledge base.'
         : null;
 
-    // 9. Asynchronously record reading history for personalization tracking
+    // 10. Asynchronously record reading history for personalization tracking
     if (citations.length > 0) {
       readingHistoryRepository
         .recordInteraction({

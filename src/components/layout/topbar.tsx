@@ -119,7 +119,14 @@ export function Topbar() {
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 text-xs font-semibold text-[#18231C]"
           >
-            Explore
+            Explore Passages
+          </Link>
+          <Link
+            href="/reader"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 text-xs font-semibold text-[#18231C]"
+          >
+            Canonical Library & PDFs
           </Link>
           <Link
             href="/learn"

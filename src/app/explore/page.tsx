@@ -110,16 +110,26 @@ function ExploreContent() {
   return (
     <div className="space-y-7 pb-16 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="space-y-1">
-        <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
-          THE COLLECTION
-        </span>
-        <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
-          Explore the Nahj al-Balagha
-        </h1>
-        <p className="text-xs md:text-sm text-[#58635B]">
-          Discover sermons, letters, and sayings by theme, source, or question.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
+            THE COLLECTION
+          </span>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
+            Explore the Nahj al-Balagha
+          </h1>
+          <p className="text-xs md:text-sm text-[#58635B]">
+            Discover sermons, letters, and sayings by theme, source, or question.
+          </p>
+        </div>
+
+        <Link
+          href="/reader"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#EBF3EE] border border-[#D2E4D8] text-[#143E2E] hover:bg-[#DDECE3] text-xs font-bold transition-all shadow-2xs self-start md:self-auto"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Canonical Library & Official PDFs →</span>
+        </Link>
       </div>
 
       {/* Filter and Search Bar Row */}
