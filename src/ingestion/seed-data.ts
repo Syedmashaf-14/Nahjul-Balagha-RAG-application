@@ -14,7 +14,6 @@ The foremost in religion is the acknowledgement of Him, the perfection of acknow
     urduTranslation: `تمام تعریفیں اس اللہ کے لئے سزاوار ہیں جس کی مدح و ثنا کا حق زبانیں ادا نہیں کر سکتیں، جس کی نعمتوں کا شمار حساب دان نہیں کر سکتے، اور کوشش کرنے والے اس کی بندگی کا حق ادا نہیں کر سکتے۔ بلند ہمتیں اس کی ذات کی گہرائیوں کو نہیں پا سکتیں اور فہم و فراست کے غوطہ خور اس کے کنارہ تک نہیں پہنچ سکتے۔ جس کی ذات و صفات کے لئے نہ کوئی حد مقرر ہے، نہ کوئی توصیفی بیان، نہ کوئی معین وقت اور نہ کوئی پھیلی ہوئی مدت۔ اس نے اپنی قدرت کاملہ سے مخلوقات کو پیدا کیا اور اپنی رحمت سے ہوائیں چلائیں اور چٹانوں کے ذریعے زمین کی لرزش کو قرار دیا۔
 
 دین کی ابتدا اس کی معرفت ہے، کمالِ معرفت اس کی تصدیق ہے، کمالِ تصدیق اس کی توحید ہے، اور کمالِ توحید اس کے لئے اخلاص عمل ہے، اور کمالِ اخلاص یہ ہے کہ اس کی ذات کو تمام صفات زائدہ سے پاک سمجھا جائے۔`,
-    romanUrduTranslation: `Tamam tareefain us Allah ke liye hain jis ki sana ka haq bayan karne walay ada nahi kar sakte, aur jis ki naimaton ka hisab ginne walay nahi kar sakte. Deen ki ibteda Us ki marifat hai, aur marifat ka kamal Us ki tasdeeq hai, tasdeeq ka kamal Us ki tawhid hai, aur tawhid ka kamal Us ke liye ikhlas hai. Us ne apni qudrat se makhlooq ko banaya aur apni rehmat se hawayen chalayein.`,
     topics: ['knowledge', 'piety', 'prayer_worship', 'eloquence', 'wisdom'],
   },
   {
@@ -34,7 +33,6 @@ Never say: 'I am your master, I order and must be obeyed,' for this breeds corru
 اپنے دل میں رعایا کے لئے رحمت، محبت اور لطف و مہربانی کو شعار بناؤ، اور ان کے سامنے پھاڑ کھانے والے درندے کی طرح نہ ہو جانا جو ان کا کھانا غنیمت سمجھتا ہے؛ کیونکہ رعایا کی دو قسمیں ہیں: یا تو وہ دین میں تمہارے بھائی ہیں، یا پھر خلقت و انسانیت میں تمہارے جیسے انسان ہیں۔ ان سے لغزشیں بھی ہوں گی، خطائیں بھی سرزد ہوں گی، اور دانستہ یا نادانستہ غلطیاں واقع ہوں گی۔ لہٰذا تم انہیں اسی طرح اپنا عفو و درگزر عطا کرنا جس طرح تم اللہ سے عفو و بخشش کی امید رکھتے ہو۔
 
 خبردار! کبھی یہ نہ کہنا کہ "میں حاکم ہوں، میں حکم دیتا ہوں اور میری اطاعت لازمی ہے"؛ کیونکہ یہ طرز فکر دل میں فساد پیدا کرتا ہے، دین کو کمزور کرتا ہے اور زوال کو قریب لاتا ہے۔`,
-    romanUrduTranslation: `Yeh farman hai jo Allah ke bande Ali Ameer-ul-Momineen ne Malik ibn al-Harith al-Ashtar ke naam tehreer farmaya: Apne dil ko ri'aya ke liye rehmat, muhabbat aur narmi ka aadi banao. Un ke sar par darinda ban kar na baitho jo unhein nigal jana chahta ho. Kyunke ri'aya do tarah ke logon par mushtamil hai: ya to woh deen mein tumharay bhai hain, ya insaniyat mein tumharay jaisay hain. Pas unhein apna afw aur darguzar usi tarah ata karo jaisay tum Allah se bakshish chahte ho.`,
     topics: ['governance', 'leadership', 'justice', 'human_rights', 'ethics_morality', 'responsibility'],
   },
   {
@@ -50,7 +48,6 @@ They remain in the time of trial just as they remain in comfort. If there had no
     urduTranslation: `اللہ سبحانہ نے جب مخلوق کو پیدا کیا تو وہ ان کی اطاعت سے بے نیاز تھا اور ان کی معصیت سے محفوظ تھا۔ متقی لوگ دنیا میں اہل فضیلت ہیں: ان کی گفتگو صائب و سچی ہوتی ہے، ان کا لباس میانہ روی پر مبنی ہوتا ہے، اور ان کی رفتار عاجزی اور انکساری والی ہوتی ہے۔ انہوں نے اپنی نگاہوں کو ان چیزوں سے بند کر رکھا ہے جنہیں اللہ نے حرام کیا ہے، اور اپنے کانوں کو اس علم کے لئے وقف کر دیا ہے جو نفع بخش ہے۔
 
 وہ مصیبت و آزمائش کے وقت بھی اسی طرح ثابت قدم رہتے ہیں جس طرح آسائش و راحت میں رہتے ہیں۔ اگر ان کے لئے موت کا وقت معین نہ ہوتا تو ثواب کے شوق اور عذاب کے خوف کی وجہ سے ان کی روحیں پلک جھپکنے کی دیر بھی ان کے جسموں میں نہ ٹھہرتیں۔ خالق کی عظمت ان کے دلوں میں جاگزیں ہے، اس لئے اس کے علاوہ ہر شے ان کی نگاہوں میں ہیچ اور چھوٹی نظر آتی ہے۔`,
-    romanUrduTranslation: `Allah ne makhlooq ko is haal mein banaya ke woh un ki ita'at se be-niyaz aur un ki nafarmaani se bay-khauf tha. Muttaqi log ahl-e-fazeelat hain: un ki guftagu sach par mabni hoti hai, un ka libas miyana-ravi par hota hai, aur un ki chal mein inkisari hoti hai. Unhon ne apni aankhein haram kardah cheezon se pher li hain aur apnay kaanon ko nafa-bakhsh ilm ke liye waqf kar diya hai. Khaliq ki azmat un ke dilon mein aisi baithi hai ke Us ke siwa har cheez un ki nazron mein choti maloom hoti hai.`,
     topics: ['piety', 'ethics_morality', 'self_discipline', 'character_development', 'patience', 'wisdom'],
   },
   {
@@ -70,7 +67,6 @@ O my son, make yourself the measure between yourself and others. Love for others
 اے میرے فرزند! اگرچہ میری عمر اتنی نہیں ہوئی جتنی مجھ سے پہلے گزرنے والوں کی تھی، لیکن میں نے ان کے اعمال و کردار پر نظر ڈالی، ان کی تاریخ و احوال میں غور و خوض کیا یہاں تک کہ میں گویا ان ہی میں سے ایک ہو گیا، بلکہ جو حالات مجھ تک پہنچے ان کی بدولت ایسا محسوس ہوتا ہے جیسے میں ان کے اول سے آخر تک ان کے ساتھ رہا ہوں۔
 
 اے فرزند! اپنے اور دوسروں کے درمیان اپنے نفس کو ترازو اور میزان قرار دو۔ جو چیز اپنے لئے پسند کرتے ہو وہی دوسروں کے لئے پسند کرو، اور جو بات اپنے لئے ناپسند کرتے ہو وہ دوسروں کے لئے بھی ناپسند جانو۔ ظلم نہ کرو جس طرح تم اپنے اوپر ظلم پسند نہیں کرتے، اور احسان و نیکی کرو جس طرح تم چاہتے ہو کہ تمہارے ساتھ احسان کیا جائے۔`,
-    romanUrduTranslation: `Ai mere farzand! Apne aur doosron ke darmiyan apnay nafs ko tarazoo qarar do. Jo cheez apnay liye pasand kartay ho wohi doosron ke liye pasand karo, aur jo baat apnay liye napasand kartay ho woh doosron ke liye bhi napasand jaano. Zulm na karo jaisay tum apnay upar zulm pasand nahi kartay, aur ahsan karo jaisay chahte ho ke tumharay sath ahsan kiya jaye.`,
     topics: ['ethics_morality', 'character_development', 'wisdom', 'family', 'justice', 'truthfulness'],
   },
   {
@@ -92,7 +88,6 @@ O Kumayl! Those who hoard wealth have perished even though they are alive, while
 لوگ تین قسم کے ہیں: ایک عالمِ ربانی، دوسرا نجات کی راہ پر چلنے والا طالب علم، اور تیسرا وہ نادان اور پست ہجوم جو ہر پکارنے والے کے پیچھے چل پڑتا ہے اور ہر ہوا کے رخ پر مڑ جاتا ہے؛ نہ انہوں نے علم کے نور سے روشنی حاصل کی اور نہ کسی مضبوط سہارے کی پناہ لی۔
 
 اے کمیل! علم مال سے کہیں بہتر ہے۔ علم تمہاری حفاظت کرتا ہے جبکہ مال کی حفاظت تمہیں کرنا پڑتی ہے۔ مال خرچ کرنے سے گھٹتا ہے جبکہ علم خرچ کرنے سے اور زیادہ بڑھتا ہے۔ مال سے حاصل ہونے والی عزت مال کے ختم ہوتے ہی مٹ جاتی ہے، جبکہ علم کا اثر ہمیشہ باقی رہتا ہے۔ مالدار زندہ ہونے کے باوجود مردہ ہیں، اور علماء جب تک زمانہ باقی ہے زندہ و جاوید ہیں؛ ان کے جسم دنیا سے مٹ جاتے ہیں مگر ان کی یادیں اور نقوش دلوں میں محفوظ رہتے ہیں۔`,
-    romanUrduTranslation: `Ai Kumayl! Yeh dil bartan hain aur sab se behtar dil woh hai jo acchi baaton ko sab se ziada mehfooz rakhay. Log teen qism ke hain: pehla Aalim-e-Rabbani, doosra nijaat ki rah par chalne wala taalib-e-ilm, aur teesra woh jahil hujoom jo har pukarney walay ke peechay chal parta hai. Ilm maal se behtar hai: ilm tumhari hifazat karta hai jabke maal ki hifazat tumhein karni parti hai. Maal kharch se ghat-ta hai aur ilm baantney se barhta hai.`,
     topics: ['knowledge', 'wisdom', 'truthfulness', 'spiritual_development', 'ethics_morality'],
   },
   {
@@ -108,7 +103,6 @@ If loneliness frightens them, the remembrance of You brings them solace. If cala
     urduTranslation: `اے پروردگار! تو اپنے اولیاء و دوستوں کے لئے سب سے زیادہ مونس و غمخوار ہے، اور تجھ پر بھروسا کرنے والوں کی کفالت کے لئے سب سے زیادہ حاضر و ناظر ہے۔ تو ان کے باطنی بھیدوں کو دیکھتا ہے، ان کے دلوں کے ارادوں پر مطلع ہے، اور ان کی بصیرت کی انتہا کو جانتا ہے۔ ان کے تمام راز تیرے سامنے کھلے ہیں اور ان کے دل تیری بارگاہ میں بے قرار ہیں۔
 
 اگر تنہائی اور غربت انہیں خوفزدہ کرے تو تیرا ذکر انہیں انس و سکون بخشتا ہے، اور اگر ان پر مصائب کے پہاڑ ٹوٹ پڑیں تو وہ تیری پناہ میں آ جاتے ہیں، کیونکہ وہ جانتے ہیں کہ تمام امور کی باگ ڈور تیرے ہی دستِ قدرت میں ہے اور تمام فیصلے تیرے ہی حکم سے صادر ہوتے ہیں۔ اے اللہ! اگر میں اپنی ضرورت مانگنے میں لغزش کروں یا اپنی بھلائی دیکھنے سے عاجز آ جاؤں، تو مجھے میری حقیقی بھلائی کی طرف رہنمائی فرما اور میرا ہاتھ پکڑ کر ہدایت کی طرف لے جا!`,
-    romanUrduTranslation: `Ai Allah! Tu apnay doston ke liye sab se bara ghamkhwar aur madadgar hai. Tu un ke batin ke bhed janta hai aur un ke dilon ke iradon se waqif hai. Agar tanhai unhein ghabrahat mein daalay to Tera zikr unhein sukoon deta hai. Aur agar museebatein toot parein to woh Teri panah mein aate hain kyunke har cheez ki dor Tere haath mein hai. Agar main apni bhalai mangne mein ghalti karoon to Tu khud meri rehnumai farma aur mera haath pakar kar hidayat ata kar.`,
     topics: ['prayer_worship', 'piety', 'spiritual_development', 'patience'],
   },
   {
@@ -124,7 +118,6 @@ O Allah! Have mercy on the groaning of the distressed and the lamentation of the
     urduTranslation: `اے اللہ! ہمارے پہاڑ خشک سالی سے پھٹ گئے ہیں، ہماری زمین غبار آلود ہو چکی ہے، ہمارے مویشی پیاس کی شدت سے نڈھال ہیں اور اپنے ٹھکانوں میں حیران و پریشان سرگرداں ہیں، جیسے مائیں اپنے کھوئے ہوئے بچوں کے غم میں فریاد کرتی ہیں۔
 
 اے پروردگار! بے قرار جانوں کے رونے پر رحم فرما، اور چوپایوں کی پیاس پر کرم فرما! ہم تیری بارگاہ میں اس وقت نکلے ہیں جب قحط سالی نے ہمیں گھیر لیا ہے اور بادلوں نے برسنا بند کر دیا ہے۔ اے اللہ! ہم پر ایسی بارانِ رحمت نازل فرما جو سیراب کرنے والی ہو، زرخیز بنانے والی ہو، اور ہمارے قحط کا خاتمہ کر کے فصلوں کو حیاتِ نو بخشے!`,
-    romanUrduTranslation: `Ai Allah! Humare pahar khushk saali se phat gaye hain, zameen banjar ho chuki hai, aur humare janwar pyas ki shiddat se bechain hain. Hum Teri bargah mein aaye hain jab qahat saali ne humein gher liya hai. Ai Allah! Hum par aisi baran-e-rehmat naazil farma jo zameen ko sairab kar de aur qahat ko khatam kar ke har taraf sabza aur khushhali phelaye!`,
     topics: ['prayer_worship', 'human_rights', 'piety', 'spiritual_development'],
   },
   {
@@ -140,7 +133,6 @@ Then I began to ponder whether I should assault or endure calmly the blinding da
     urduTranslation: `خدا کی قسم! ابن ابی قحافہ نے خلافت کا کرتا پہن لیا حالانکہ وہ خوب جانتے تھے کہ خلافت کی چکی کے لیے میری حیثیت وہی ہے جو چکی کے درمیان کِیل کی ہوتی ہے۔ علم و کمال کا سیلاب مجھ سے بہتا ہے اور کوئی پرندہ میری بلندی پر پرواز نہیں کر سکتا۔ لیکن میں نے خلافت کے آگے دامن جھٹک دیا اور اس سے پہلو تہی کر لی۔
 
 پھر میں نے سوچا کہ آیا کٹے ہوئے ہاتھوں سے حملہ کروں یا اس گھٹا ٹوپ اندھیرے پر صبر کروں جس میں بڑے بوڑھے فرسودہ ہو جائیں اور جوان بوڑھے ہو جائیں۔ پس میں نے دیکھا کہ صبر ہی زیادہ قرینِ مصلحت اور دانشمندی ہے، چنانچہ میں نے اس عالم میں صبر کیا کہ آنکھوں میں کانٹے چبھ رہے تھے اور حلق میں ہڈی پھنسی ہوئی تھی، اور میں اپنی میراث کو لٹتے دیکھ رہا تھا۔`,
-    romanUrduTranslation: `Khuda ki qasam! Ibn Abi Quhafah ne khilafat ka kurta pehan liya halanke woh jantay thay ke mera maqam is chakki ke mehwar ki tarah hai. Ilm ka sailab mujh se behta hai aur koi parindah meri bulandi tak nahi pohanch sakta. Maine sabr ko behtar samjha halanke aankhon mein khar tha aur halq mein haddi phansi hui thi, aur main apni meeras ko lutta dekh raha tha.`,
     topics: ['patience', 'governance', 'leadership', 'wisdom', 'responsibility'],
   },
   {
@@ -156,7 +148,6 @@ When the ruled fulfill their duty to the ruler and the ruler fulfills his duty t
     urduTranslation: `اللہ سبحانہ نے تمہارے امور کی حکمرانی کے ذریعے مجھ پر تمہارا اور تم پر میرا حق مقرر کیا ہے۔ حق بیان کرنے میں سب سے زیادہ وسیع ہے، لیکن انصاف پر عمل کرنے کے میدان میں سب سے زیادہ تنگ اور کٹھن ہے۔ حق کسی کے فائدے میں نہیں چلتا مگر یہ کہ اس کے خلاف بھی عائد ہوتا ہے، اور کسی کے خلاف عائد نہیں ہوتا مگر یہ کہ اس کے حق میں بھی ہوتا ہے۔
 
 پس جب رعایا والی کا حق ادا کرے اور والی رعایا کا حق ادا کرے، تو ان کے درمیان حق کی عزت قائم ہو جاتی ہے، دین کے راستے استوار ہو جاتے ہیں، اور عدل و انصاف کی نشانیاں معتدل اور مستحکم ہو جاتی ہیں۔`,
-    romanUrduTranslation: `Allah ne tumhare amoor ki hukumrani ke zariye tum par mera aur mujh par tumhara haq muqarrar kiya hai. Jab ri'aya haakim ka haq ada kare aur haakim ri'aya ka haq ada kare, to un ke darmiyan haq sarbuland hota hai, deen ki bunyadein mazboot hoti hain, aur adal o insaf ka parcham lehrata hai.`,
     topics: ['justice', 'governance', 'leadership', 'human_rights', 'ethics_morality'],
   },
   {
@@ -172,7 +163,6 @@ By Allah, I saw my brother Aqil in utter poverty asking me for a measure of grai
     urduTranslation: `خدا کی قسم! اگر مجھے ساتوں اقلیم اور جو کچھ آسمانوں کے نیچے ہے اس شرط پر دے دیا جائے کہ میں چیونٹی کے منہ سے جو کے دانے کا چھلکا چھین کر اللہ کی نافرمانی کروں، تو میں کبھی ایسا نہیں کروں گا۔ تمہاری یہ دنیا میری نگاہ میں ٹڈی کے منہ میں چبائے ہوئے پتے سے بھی زیادہ حقیر و بے قیمت ہے۔ علی کا فنا ہونے والی نعمتوں اور نہ رہنے والی لذتوں سے کیا تعلق!
 
 خدا کی قسم! میں نے اپنے بھائی عقیل کو دیکھا جو فقر و فاقہ کی شدت سے میرے پاس آئے اور مسلمانوں کے بیت المال سے گندم کا ایک صاع مانگا... پس میں نے ایک لوہے کو آگ میں تپایا اور عبرت کے لیے ان کے جسم کے قریب کیا، تو وہ درد کی شدت سے چیخ اٹھے جیسے کوئی بیمار چیختا ہے۔ میں نے کہا: اے عقیل! رونے والیاں تجھ پر روئیں! کیا تم اس لوہے سے چیختے ہو جسے ایک انسان نے مذاق میں گرم کیا ہے، اور مجھے اس آگ کی طرف کھینچتے ہو جسے خدائے قہار نے اپنے غضب سے بھڑکایا ہے؟!`,
-    romanUrduTranslation: `Khuda ki qasam! Agar mujhe saaton aqlimein aur aasmanon ke neeche jo kuch hai is shart par de diya jaye ke main chiyonti ke munh se jow ka chilka cheen kar Allah ki nafarmaani karoon, to main hargiz aisa nahi karoon ga. Yeh dunya meri nazar mein tiddi ke munh mein chabaye huye pattay se bhi ziada bay-qeemat hai!`,
     topics: ['justice', 'worldly_detachment', 'ethics_morality', 'truthfulness', 'piety'],
   },
   {
@@ -184,7 +174,6 @@ By Allah, I saw my brother Aqil in utter poverty asking me for a measure of grai
     arabicText: `قِيمَةُ كُلِّ امْرِئٍ مَا يُحْسِنُهُ.`,
     translationText: `The worth and value of every human being is that which he does well (the virtue, knowledge, and skill he genuinely possesses).`,
     urduTranslation: `ہر انسان کی قدر و قیمت وہ ہنر، نیکی اور علم ہے جس میں وہ کمال رکھتا ہے۔`,
-    romanUrduTranslation: `Har insan ki qadr o qeemat woh khoobi, neki aur ilm hai jise woh achi tarah anjam deta hai.`,
     topics: ['wisdom', 'knowledge', 'character_development'],
   },
   {
@@ -196,7 +185,6 @@ By Allah, I saw my brother Aqil in utter poverty asking me for a measure of grai
     arabicText: `كُنْ فِي الْفِتْنَةِ كَابْنِ اللَّبُونِ، لاَ ظَهْرٌ فَيُرْكَبَ، وَلاَ ضَرْعٌ فَيُحْلَبَ.`,
     translationText: `During civil strife and sedition, be like an adolescent male camel who has neither a back strong enough for riding, nor udders to be milked (i.e. do not become an instrument, weapon, or economic resource for oppressors and corrupt factions).`,
     urduTranslation: `فتنہ و فساد کے دور میں ایسے بن جاؤ جیسے اونٹ کا وہ چھوٹا بچہ جس کی نہ پیٹھ اتنی مضبوط ہو کہ اس پر سواری کی جا سکے اور نہ اس کے تھن ہوں کہ اس کا دودھ دوہا جا سکے (یعنی ظالموں اور فتنہ پروروں کا آلہ کار نہ بنو)۔`,
-    romanUrduTranslation: `Fitna o fasad ke daur mein oont ke chotay bachay ki tarah raho, jis par na sawari ki ja sakay aur na uska doodh doha ja sakay.`,
     topics: ['wisdom', 'patience', 'self_discipline', 'ethics_morality'],
   },
   {
@@ -208,7 +196,6 @@ By Allah, I saw my brother Aqil in utter poverty asking me for a measure of grai
     arabicText: `لاَ تَكُنْ مِمَّنْ يَرْجُو الآخِرَةَ بِغَيْرِ الْعَمَلِ، وَيُرَجِّي التَّوْبَةَ بِطُولِ الأَمَلِ، يَقُولُ فِي الدُّنْيَا بِقَوْلِ الزَّاهِدِينَ، وَيَعْمَلُ فِيهَا بِعَمَلِ الرَّاغِبِينَ. إِنْ أُعْطِيَ مِنْهَا لَمْ يَشْبَعْ، وَإِنْ مُنِعَ مِنْهَا لَمْ يَقْنَعْ.`,
     translationText: `Do not be like him who hopes for salvation in the hereafter without righteous work, and defers repentance through prolonged hopes; who speaks about the world with the language of the ascetic, but acts in it with the greed of the covetous. If he is given from it he is never satisfied, and if he is denied he is never contented.`,
     urduTranslation: `ان لوگوں میں سے نہ بنو جو بغیر عمل کے آخرت کی امید رکھتے ہیں، اور لمبی امیدوں کے بل بوتے پر توبہ کو ٹالتے رہتے ہیں؛ دنیا کے بارے میں زاہدوں جیسی باتیں کرتے ہیں مگر اس کے طلبگاروں کی طرح دنیا کے پیچھے بھاگتے ہیں۔ اگر دنیا مل جائے تو سیر نہیں ہوتے، اور اگر نہ ملے تو قناعت نہیں کرتے۔`,
-    romanUrduTranslation: `Un logon mein se na bano jo baghair nek amal ke aakhirat ki umeed rakhte hain, aur lambi umeedon ke sahare tauba ko taaltay rehte hain; dunya ke baray mein parhezgaron jaisi baatein kartay hain lekin lalachiyon ki tarah amal kartay hain.`,
     topics: ['ethics_morality', 'self_discipline', 'wisdom', 'truthfulness', 'worldly_detachment'],
   },
 ];

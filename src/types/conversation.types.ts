@@ -66,7 +66,7 @@ export const ChatRequestSchema = z.object({
   message: z.string().min(1).max(5000),
   passageRef: PassageRefSchema.optional(),
   overrides: z.object({
-    language: z.enum(['arabic', 'english', 'urdu', 'roman_urdu']).optional(),
+    language: z.enum(['arabic', 'english', 'urdu']).optional(),
     explanationLevel: z.enum(['beginner', 'intermediate', 'advanced', 'researcher']).optional(),
     responseLength: z.enum(['short', 'moderate', 'detailed']).optional(),
   }).optional(),

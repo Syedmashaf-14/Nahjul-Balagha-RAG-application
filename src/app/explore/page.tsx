@@ -153,6 +153,7 @@ function ExploreContent() {
             { label: 'Sermons', value: 'sermon' },
             { label: 'Letters', value: 'letter' },
             { label: 'Sayings', value: 'saying' },
+            { label: "Du'as", value: 'dua' },
           ].map((item) => {
             const isActive = selectedType === item.value;
             return (

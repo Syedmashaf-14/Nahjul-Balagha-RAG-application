@@ -19,7 +19,7 @@ import {
 import { SEED_PASSAGES } from '@/ingestion/seed-data';
 import { RawPassage } from '@/types/passage.types';
 
-type ReaderLanguage = 'arabic' | 'english' | 'urdu' | 'roman_urdu' | 'dual';
+type ReaderLanguage = 'arabic' | 'english' | 'urdu' | 'dual';
 type ActiveTab = 'reader' | 'pdfs';
 
 const PDF_EDITIONS = [
@@ -184,7 +184,6 @@ export default function ReaderPage() {
                   { id: 'arabic', label: 'العربية (Original Arabic)' },
                   { id: 'english', label: 'English (Syed Ali Reza)' },
                   { id: 'urdu', label: 'اردو (علامہ ذیشان حیدر جوادی)' },
-                  { id: 'roman_urdu', label: 'Roman Urdu (Phonetic)' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -280,10 +279,6 @@ export default function ReaderPage() {
                         {selectedLang === 'urdu' && p.urduTranslation ? (
                           <p className="text-right font-serif leading-loose text-[#18231C]">
                             {p.urduTranslation}
-                          </p>
-                        ) : selectedLang === 'roman_urdu' && p.romanUrduTranslation ? (
-                          <p className="italic text-[#18231C]">
-                            &ldquo;{p.romanUrduTranslation}&rdquo;
                           </p>
                         ) : (
                           <p className="italic text-[#18231C]">
@@ -442,18 +437,6 @@ export default function ReaderPage() {
                 </span>
                 <p className="text-sm md:text-base text-[#18231C] text-right leading-loose p-4 rounded-2xl bg-[#FBF9F5] border border-[#ECE7DE] whitespace-pre-wrap">
                   {activePassage.urduTranslation}
-                </p>
-              </div>
-            )}
-
-            {/* Roman Urdu Translation if available */}
-            {activePassage.romanUrduTranslation && (
-              <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#58635B] block">
-                  Roman Urdu Translation:
-                </span>
-                <p className="text-xs text-[#58635B] italic leading-relaxed p-4 rounded-2xl bg-[#FBF9F5] border border-[#ECE7DE]">
-                  {activePassage.romanUrduTranslation}
                 </p>
               </div>
             )}

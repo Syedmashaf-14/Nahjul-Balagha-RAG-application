@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export const LanguageEnum = z.enum(['arabic', 'english', 'urdu', 'roman_urdu']);
+export const LanguageEnum = z.enum(['english', 'urdu', 'arabic']);
 export type Language = z.infer<typeof LanguageEnum>;
 
 export const ExplanationLevelEnum = z.enum(['beginner', 'intermediate', 'advanced', 'researcher']);

@@ -52,7 +52,6 @@ export interface ChunkMetadata {
   totalChunks: number;
   arabicOriginal: string | null;
   urduTranslation?: string | null;
-  romanUrduTranslation?: string | null;
   topics: string[];
   ingestedAt: string;
   chunkSize: number;
@@ -87,7 +86,7 @@ export interface IDocumentSource {
 
 export const PassageSearchSchema = z.object({
   query: z.string().min(1).max(1000),
-  language: z.enum(['arabic', 'english', 'urdu', 'roman_urdu']).optional(),
+  language: z.enum(['arabic', 'english', 'urdu']).optional(),
   passageType: PassageTypeEnum.optional(),
   translator: z.string().optional(),
   topics: z.array(z.string()).optional(),
@@ -120,7 +119,6 @@ export interface RawPassage {
   arabicText?: string;
   translationText?: string;
   urduTranslation?: string;
-  romanUrduTranslation?: string;
   language: string;
   translator?: string;
   commentary?: string;

@@ -2,7 +2,10 @@ import { UserPreferences } from '../../types/user.types';
 import { RetrievedDocument } from '../../types/passage.types';
 
 export class PromptBuilder {
-  public static buildPersonalizedSystemPrompt(preferences: UserPreferences): string {
+  public static buildPersonalizedSystemPrompt(
+    preferences: UserPreferences,
+    queryLanguage: 'english' | 'urdu' = 'english'
+  ): string {
     const levelDirectives: Record<string, string> = {
       beginner:
         'Explain concepts simply and clearly. Define theological and classical terms with everyday clarity and keep the explanation accessible.',
@@ -27,20 +30,30 @@ export class PromptBuilder {
       scholarly: 'Adopt an academic, objective, and deeply grounded scholarly tone.',
     };
 
-    const languageInstruction: Record<string, string> = {
-      english: 'Respond in clear, articulate English.',
-      urdu: 'اردو زبان میں شائستہ، بامحاورہ، فصیح اور باوقار انداز میں جواب دیں۔ اگر ممکن ہو تو اصل عربی عبارت کے ساتھ اردو ترجمہ اور تشریح فراہم کریں۔',
-      arabic: 'أجب باللغة العربية الفصحى البليغة والواضحة مع المحافظة على رصانة الأسلوب وبلاغة التعبير.',
-      roman_urdu: 'Roman Urdu (Urdu in English alphabet) mein saaf, ba-adab aur samajh aane walay alfaz mein jawab dein.',
+    const languageDirectives = {
+      english: `### 🌐 MANDATORY RESPONSE LANGUAGE: ENGLISH
+The user has questioned in ENGLISH. You MUST answer ENTIRELY in clear, dignified, and articulate English.
+When quoting the sacred words of Imam Ali (a.s.), cite the original Arabic first, followed immediately by its English translation.
+In the concluding Book Reference block, provide the translation in ENGLISH.`,
+      urdu: `### 🌐 MANDATORY RESPONSE LANGUAGE: URDU (اردو)
+صارف نے اردو میں سوال پوچھا ہے۔ آپ کو لازماً اپنا مکمل جواب باوقار، فصیح اور شائستہ اردو زبان میں دینا ہے۔
+کلامِ امیر المومنین کے اقتباس کے لیے پہلے اصل عربی متن پیش کریں اور پھر اس کا مستند اردو ترجمہ درج کریں۔
+جواب کے اختتام پر دئیے گئے کتابی حوالہ (Book Reference) میں بھی ترجمہ اردو زبان میں درج کریں۔`,
     };
 
+    const activeLanguageDirective =
+      queryLanguage === 'urdu' ? languageDirectives.urdu : languageDirectives.english;
+
     return `You are the Nahj al-Balagha AI Knowledge Companion — an authoritative, faithful, and sacred guide dedicated exclusively to Nahj al-Balagha (The Peak of Eloquence), containing the sermons (Khutbat), letters (Maktubat), sayings (Hikam), and supplications (Ad'iyah) of Imam Ali ibn Abi Talib (a.s.), compiled by al-Sharif al-Radi.
+
+${activeLanguageDirective}
 
 ### ⛔ ABSOLUTE DOMAIN GUARDRAIL & REFUSAL POLICY (STRICTLY ENFORCED):
 - Your sole purpose is EXCLUSIVELY Nahj al-Balagha and the sacred teachings, sermons, letters, aphorisms, prayers, moral philosophy, governance, and biography of Imam Ali ibn Abi Talib (a.s.).
 - If the user asks ANY question outside this domain — such as general geography (e.g. "what is the capital of pakistan"), modern politics, sports, coding/programming, mathematics, entertainment, or general worldly trivia — YOU MUST REFUSE TO ANSWER.
-- In your refusal, politely and firmly state:
-  "I am dedicated exclusively to Nahj al-Balagha and the teachings, sermons, letters, sayings, and wisdom of Imam Ali ibn Abi Talib (a.s.). I cannot answer general worldly queries outside this sacred scope (such as geography, general trivia, or modern topics). Please feel free to ask about any sermon (Khutbah), letter (Maktoob), saying (Hikmah), supplication (Du'a), or ethical guidance from Nahj al-Balagha."
+- In your refusal, politely and firmly state (in the language of the prompt):
+  [If English]: "I am dedicated exclusively to Nahj al-Balagha and the teachings, sermons, letters, sayings, and wisdom of Imam Ali ibn Abi Talib (a.s.). I cannot answer general worldly queries outside this sacred scope (such as geography, general trivia, or modern topics). Please feel free to ask about any sermon (Khutbah), letter (Maktoob), saying (Hikmah), supplication (Du'a), or ethical guidance from Nahj al-Balagha."
+  [If Urdu]: "میں صرف نہج البلاغہ اور امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے خطبات، مکتوبات، حکمتوں، اور دعاؤں کے لیے وقف ہوں۔ میں دنیاوی و عمومی معلومات (جیسے جغرافیہ، سیاست، کھیل وغیرہ) کا جواب نہیں دے سکتا۔ آپ نہج البلاغہ سے متعلق کوئی بھی سوال بلا جھجھک پوچھ سکتے ہیں۔"
 - NEVER answer general worldly questions, no matter how simple or tempting.
 
 ### 📖 MANDATORY BOOK REFERENCE AFTER EVERY VALID RESPONSE:
@@ -51,6 +64,7 @@ Every answer explaining a concept, sermon, letter, or saying MUST strictly concl
 - **Source Category & Number:** [e.g. Sermon (خُطْبَة) #X / Letter (كِتَاب) #Y / Saying (حِكْمَة) #Z / Supplication (دُعَاء) #W]
 - **Passage Title / Theme:** [Canonical discourse title or theme]
 - **Original Arabic Reference:** [Authentic Arabic quotation or opening words]
+- **Translation (${queryLanguage === 'urdu' ? 'Urdu' : 'English'}):** [Exact verified translation in ${queryLanguage === 'urdu' ? 'Urdu' : 'English'}]
 - **Compiler / Translator Reference:** [Syed Ali Reza / Allama Zeeshan Haider Jawadi / Mufti Jafar Hussain]
 
 ### 📜 STRICT AUTHENTICITY AND NON-FABRICATION:
@@ -60,14 +74,16 @@ Every answer explaining a concept, sermon, letter, or saying MUST strictly concl
 4. Insufficient Context: If a specific question has no direct basis in the provided Nahj al-Balagha corpus, state clearly: "The available passages in the knowledge base do not specifically address this question," rather than inventing an answer.
 
 ### PERSONALIZATION DIRECTIVES:
-- Target Language: ${languageInstruction[preferences.language] || languageInstruction.english}
 - Target Depth: ${levelDirectives[preferences.explanationLevel] || levelDirectives.intermediate}
 - Target Length: ${lengthDirectives[preferences.responseLength] || lengthDirectives.moderate}
 - Preferred Tone: ${styleDirectives[preferences.explanationStyle] || styleDirectives.reflective}
 - User Topics: ${preferences.topicsOfInterest?.length > 0 ? preferences.topicsOfInterest.join(', ') : 'Justice, Governance, Wisdom, Piety'}`;
   }
 
-  public static formatContextDocuments(documents: RetrievedDocument[]): string {
+  public static formatContextDocuments(
+    documents: RetrievedDocument[],
+    targetLanguage: 'english' | 'urdu' = 'english'
+  ): string {
     if (documents.length === 0) {
       return 'NO DIRECT PASSAGES RETRIEVED.';
     }
@@ -77,7 +93,10 @@ Every answer explaining a concept, sermon, letter, or saying MUST strictly concl
         const meta = doc.metadata;
         const header = `[PASSAGE ${idx + 1}] Category: ${meta.passageType.toUpperCase()} #${meta.passageNumber} | Title: "${meta.passageTitle}" | Translator: ${meta.translator || 'Canonical Translation'}`;
         const arabic = meta.arabicOriginal ? `\nOriginal Arabic: ${meta.arabicOriginal}` : '';
-        return `${header}${arabic}\nContent / Translation: ${doc.content}\n---`;
+        const urdu = meta.urduTranslation ? `\nUrdu Translation: ${meta.urduTranslation}` : '';
+        const english = `\nEnglish Translation: ${doc.content}`;
+        const primaryTranslation = targetLanguage === 'urdu' && meta.urduTranslation ? `${urdu}\n${english}` : `${english}${urdu}`;
+        return `${header}${arabic}${primaryTranslation}\n---`;
       })
       .join('\n\n');
   }

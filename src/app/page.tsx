@@ -48,7 +48,9 @@ export default function DashboardPage() {
             {todayDate}
           </span>
           <h1 className="font-serif-title text-3xl md:text-4xl text-[#18231C] tracking-tight font-medium">
-            As-salāmu &lsquo;alaykum, {user.isGuest ? 'Ahmed' : user.name.split(' ')[0]}
+            {user.isGuest
+              ? 'As-salāmu ‘alaykum, Welcome User'
+              : `As-salāmu ‘alaykum, ${user.name.split(' ')[0]}`}
           </h1>
           <p className="text-xs md:text-sm text-[#58635B] mt-1">
             Continue your journey through timeless wisdom.

@@ -136,10 +136,9 @@ export default function SettingsPage() {
                 }
                 className="w-full px-4 py-2.5 bg-[#FBF9F5] border border-[#ECE7DE] rounded-xl text-xs md:text-sm text-[#18231C] focus:outline-none focus:border-[#143E2E]/40"
               >
-                <option value="english">English</option>
+                <option value="english">English (Default)</option>
                 <option value="urdu">Urdu (اردو)</option>
                 <option value="arabic">Arabic (العربية)</option>
-                <option value="roman_urdu">Roman Urdu</option>
               </select>
             </div>
 

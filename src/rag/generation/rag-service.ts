@@ -59,24 +59,38 @@ export class RAGService {
   ): Promise<RAGResponse> {
     const startTime = Date.now();
 
-    // 1. Strict Domain Guardrail Check
+    // 1. Detect query language first
+    const detectedLang = LanguageDetector.detect(request.message);
+
+    // 2. Strict Domain Guardrail Check
     if (isOutOfDomainQuery(request.message)) {
+      const refusalMessage =
+        detectedLang === 'urdu'
+          ? 'میں صرف نہج البلاغہ اور امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے خطبات، مکتوبات، حکمتوں اور دعاؤں کے لیے وقف ہوں۔ میں دنیاوی و عمومی معلومات (جیسے جغرافیہ، سیاست، کھیل وغیرہ) کا جواب نہیں دے سکتا۔\n\nآپ نہج البلاغہ سے متعلق کسی بھی خطبے، مکتوب (جیسے خط نمبر 53 بنام مالک اشتر)، حکمت یا دعا کے بارے میں بلا جھجھک دریافت فرما سکتے ہیں۔'
+          : 'I am dedicated exclusively to Nahj al-Balagha and the sacred teachings, sermons, letters, sayings, and supplications of Imam Ali ibn Abi Talib (a.s.). I cannot answer general worldly queries outside this sacred scope (such as geography, general trivia, or modern topics).\n\nPlease feel free to ask about any sermon (Khutbah), letter on governance (such as Letter 53 to Malik al-Ashtar), maxim on wisdom, supplication (Du\'a), or moral guidance from Nahj al-Balagha.';
+
       return {
-        answer:
-          'I am dedicated exclusively to Nahj al-Balagha and the sacred teachings, sermons, letters, sayings, and supplications of Imam Ali ibn Abi Talib (a.s.). I cannot answer general worldly queries outside this sacred scope (such as geography, general trivia, or modern topics).\n\nPlease feel free to ask about any sermon (Khutbah), letter on governance (such as Letter 53 to Malik al-Ashtar), maxim on wisdom, supplication (Du\'a), or moral guidance from Nahj al-Balagha.',
+        answer: refusalMessage,
         citations: [],
         relatedTopics: ['Letter 53 on Governance', 'Saying 147 on Knowledge', 'Khutba al-Muttaqeen', 'Supplications of Imam Ali'],
-        suggestedFollowUps: [
-          'What are the core principles of governance in Letter 53?',
-          'How does Imam Ali describe knowledge vs wealth in Saying 147?',
-          'What are the characteristics of the pious in Sermon 193?',
-        ],
+        suggestedFollowUps:
+          detectedLang === 'urdu'
+            ? [
+                'خط نمبر 53 میں حکمرانی کے بنیادی اصول کیا ہیں؟',
+                'حکمت نمبر 147 میں علم اور مال کا موازنہ کیسے کیا گیا ہے؟',
+                'خطبہ 193 (خطبہ متقین) میں پرہیزگاروں کے کیا اوصاف بیان ہوئے ہیں؟',
+              ]
+            : [
+                'What are the core principles of governance in Letter 53?',
+                'How does Imam Ali describe knowledge vs wealth in Saying 147?',
+                'What are the characteristics of the pious in Sermon 193?',
+              ],
         confidenceLevel: 'insufficient',
         disclaimer: 'Out-of-domain query deflected to preserve strict focus on Nahj al-Balagha.',
       };
     }
 
-    // 2. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
+    // 3. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
     let preferences: UserPreferences;
     try {
       const userPrefsDoc = await userPreferencesRepository.getByUserId(userId);
@@ -85,6 +99,9 @@ export class RAGService {
       preferences = UserPreferencesSchema.parse({});
     }
 
+    // Ensure preferred language dynamically reflects query language
+    preferences.language = detectedLang;
+
     // Apply per-request overrides if provided
     if (request.overrides) {
       preferences = {
@@ -92,9 +109,6 @@ export class RAGService {
         ...request.overrides,
       } as UserPreferences;
     }
-
-    // 3. Detect query language
-    const detectedLang = LanguageDetector.detect(request.message);
 
     // 4. Query reformulation
     const searchReadyQuery = await queryRewriter.rewrite(
@@ -119,8 +133,8 @@ export class RAGService {
     const citations = CitationBuilder.buildCitations(retrievedDocs);
 
     // 7. Formulate system and context prompts
-    const systemPrompt = PromptBuilder.buildPersonalizedSystemPrompt(preferences);
-    const contextText = PromptBuilder.formatContextDocuments(retrievedDocs);
+    const systemPrompt = PromptBuilder.buildPersonalizedSystemPrompt(preferences, detectedLang);
+    const contextText = PromptBuilder.formatContextDocuments(retrievedDocs, detectedLang);
 
     const promptMessage = `USER QUESTION:
 ${request.message}
@@ -184,10 +198,27 @@ TOPICS: <topic1>, <topic2>`;
     // 9. Guarantee that every answer includes the formal Book Reference block
     if (citations.length > 0 && !cleanAnswer.includes('Book Reference')) {
       const topCitation = citations[0];
+      const topDoc = retrievedDocs[0];
       const arabicSnippet = topCitation.arabicText
-        ? `«${topCitation.arabicText.substring(0, 100)}...»`
+        ? `«${topCitation.arabicText.substring(0, 120)}...»`
         : 'Available in original Arabic compilation';
-      const referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:\n- **Book:** Nahj al-Balagha (*Peak of Eloquence*) — Compiled by al-Sharif al-Radi (d. 406 AH)\n- **Source Category & Number:** ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber}\n- **Passage Title:** ${topCitation.passageType} #${topCitation.passageNumber}\n- **Original Arabic Reference:** ${arabicSnippet}\n- **Translator Reference:** ${topCitation.translator || 'Syed Ali Reza / Canonical Classical Text'}`;
+
+      const translationSnippet =
+        detectedLang === 'urdu' && topDoc?.metadata?.urduTranslation
+          ? topDoc.metadata.urduTranslation.substring(0, 160) + '...'
+          : topCitation.text.substring(0, 160) + '...';
+
+      const referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:
+- **Book:** Nahj al-Balagha (*Peak of Eloquence*) — Compiled by al-Sharif al-Radi (d. 406 AH)
+- **Source Category & Number:** ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber}
+- **Passage Title:** "${topDoc?.metadata?.passageTitle || `${topCitation.passageType} #${topCitation.passageNumber}`}"
+- **Original Arabic Reference:** ${arabicSnippet}
+- **Translation (${detectedLang === 'urdu' ? 'Urdu' : 'English'}):** "${translationSnippet}"
+- **Compiler / Translator Reference:** ${
+        detectedLang === 'urdu'
+          ? 'علامہ ذیشان حیدر جوادی / مفتی جعفر حسین'
+          : topCitation.translator || 'Syed Ali Reza / al-Sharif al-Radi'
+      }`;
       cleanAnswer += referenceBlock;
     }
 

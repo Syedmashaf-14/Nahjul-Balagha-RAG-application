@@ -140,34 +140,35 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Daily Reflection Streak Card */}
-      <div className="p-3.5 m-3 rounded-2xl bg-[#FDF6F2] border border-[#F5E6DC]">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-5 h-5 rounded-md bg-[#F9E2D4] flex items-center justify-center text-[#D96B43]">
-            <Flame className="w-3.5 h-3.5 fill-[#D96B43]" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-[#2A231F] block leading-none">
-              Daily reflection
-            </span>
-            <span className="text-[10px] text-[#8E877D]">5 day learning streak</span>
-          </div>
-        </div>
-
-        {/* 5 Streak Bubbles */}
-        <div className="flex items-center gap-1.5 mt-2">
-          {[1, 2, 3, 4, 5].map((d) => (
-            <div
-              key={d}
-              className="w-5 h-5 rounded-full bg-[#E5F2EB] flex items-center justify-center text-[#143E2E]"
-            >
-              <Check className="w-3 h-3 stroke-[3]" />
+      {/* Daily Reflection Streak Card - Only show when authenticated user has actual streak */}
+      {!user.isGuest && (
+        <div className="p-3.5 m-3 rounded-2xl bg-[#FDF6F2] border border-[#F5E6DC]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-5 h-5 rounded-md bg-[#F9E2D4] flex items-center justify-center text-[#D96B43]">
+              <Flame className="w-3.5 h-3.5 fill-[#D96B43]" />
             </div>
-          ))}
-          <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
-          <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
+            <div>
+              <span className="text-xs font-bold text-[#2A231F] block leading-none">
+                Daily reflection
+              </span>
+              <span className="text-[10px] text-[#8E877D]">Active learning journey</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-2">
+            {[1, 2, 3].map((d) => (
+              <div
+                key={d}
+                className="w-5 h-5 rounded-full bg-[#E5F2EB] flex items-center justify-center text-[#143E2E]"
+              >
+                <Check className="w-3 h-3 stroke-[3]" />
+              </div>
+            ))}
+            <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
+            <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* User Profile Footer */}
       <div className="p-3.5 border-t border-[#ECE7DE] flex items-center justify-between">
@@ -176,14 +177,14 @@ export function Sidebar() {
           className="flex items-center gap-2.5 w-full p-1.5 rounded-xl hover:bg-[#F7F5F0] transition-colors"
         >
           <div className="w-8 h-8 rounded-full bg-[#E5ECE7] border border-[#D2E4D8] flex items-center justify-center text-xs font-bold text-[#143E2E] shrink-0">
-            {user.isGuest ? 'AK' : user.name.substring(0, 2).toUpperCase()}
+            {user.isGuest ? 'WU' : user.name.substring(0, 2).toUpperCase()}
           </div>
           <div className="text-left flex-1 min-w-0">
             <p className="text-xs font-bold text-[#18231C] truncate leading-tight">
-              {user.isGuest ? 'Ahmed Khan' : user.name}
+              {user.isGuest ? 'Welcome, User' : user.name}
             </p>
             <p className="text-[10px] text-[#8E877D] truncate mt-0.5">
-              {user.isGuest ? 'Intermediate learner' : 'Personalized Scholar'}
+              {user.isGuest ? 'Sign in to track progress' : 'Personalized Scholar'}
             </p>
           </div>
           <MoreVertical className="w-3.5 h-3.5 text-[#8E877D]" />
