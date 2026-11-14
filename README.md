@@ -105,7 +105,7 @@ npm run build
 npm run start
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to open the platform.
+Visit https://nehjulbalagah.vercel.app/ to open the platform.
 
 ---
 
