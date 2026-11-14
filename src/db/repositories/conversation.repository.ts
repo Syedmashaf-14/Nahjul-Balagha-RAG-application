@@ -53,6 +53,7 @@ export class ConversationRepository {
     userId: string;
     role: MessageRole;
     content: string;
+    imageUrl?: string | null;
     citations?: Citation[];
     metadata?: {
       model?: string;
@@ -69,6 +70,7 @@ export class ConversationRepository {
       userId: data.userId,
       role: data.role,
       content: data.content,
+      imageUrl: data.imageUrl || null,
       citations: data.citations || [],
       metadata: data.metadata || {},
     });

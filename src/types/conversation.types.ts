@@ -34,6 +34,7 @@ export interface IMessage {
   userId: string;
   role: MessageRole;
   content: string;
+  imageUrl?: string | null;
   citations: Array<{
     sourceId: string;
     passageType: string;
@@ -64,6 +65,7 @@ export interface IMessage {
 export const ChatRequestSchema = z.object({
   conversationId: z.string().optional(),
   message: z.string().min(1).max(5000),
+  image: z.string().optional(), // Base64 Data URL or image URL for multimodal vision analysis
   passageRef: PassageRefSchema.optional(),
   overrides: z.object({
     language: z.enum(['arabic', 'english', 'urdu']).optional(),

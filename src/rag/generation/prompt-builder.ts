@@ -34,11 +34,12 @@ export class PromptBuilder {
       english: `### 🌐 MANDATORY RESPONSE LANGUAGE: ENGLISH
 The user has questioned in ENGLISH. You MUST answer ENTIRELY in clear, dignified, and articulate English.
 When quoting the sacred words of Imam Ali (a.s.), cite the original Arabic first, followed immediately by its English translation.
-In the concluding Book Reference block, provide the translation in ENGLISH.`,
-      urdu: `### 🌐 MANDATORY RESPONSE LANGUAGE: URDU (اردو)
-صارف نے اردو میں سوال پوچھا ہے۔ آپ کو لازماً اپنا مکمل جواب باوقار، فصیح اور شائستہ اردو زبان میں دینا ہے۔
+In the concluding Book Reference block, provide the headers and translation in ENGLISH.`,
+      urdu: `### 🌐 لازمی ہدایت برائے زبان: اردو (MANDATORY RESPONSE LANGUAGE: URDU)
+صارف کا سوال اردو میں ہے۔ آپ کا مکمل جواب (تمام تشریح، وضاحت، اخلاقی رہنمائی، اور تجزیہ) لازماً اور مکمل طور پر فصیح، باوقار اور شائستہ اردو زبان (اردو رسم الخط) میں ہونا چاہیے۔
+انگریزی زبان میں بالکل جواب نہ دیں۔
 کلامِ امیر المومنین کے اقتباس کے لیے پہلے اصل عربی متن پیش کریں اور پھر اس کا مستند اردو ترجمہ درج کریں۔
-جواب کے اختتام پر دئیے گئے کتابی حوالہ (Book Reference) میں بھی ترجمہ اردو زبان میں درج کریں۔`,
+جواب کے اختتام پر دئیے گئے کتابی حوالہ (Book Reference) کے تمام عنوانات اور ترجمہ بھی اردو زبان میں درج کریں۔`,
     };
 
     const activeLanguageDirective =

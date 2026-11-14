@@ -59,11 +59,15 @@ export class RAGService {
   ): Promise<RAGResponse> {
     const startTime = Date.now();
 
-    // 1. Detect query language first
-    const detectedLang = LanguageDetector.detect(request.message);
+    // 1. Detect query language first with preference support
+    const userPrefLanguage =
+      request.overrides?.language === 'urdu' || request.overrides?.language === 'english'
+        ? request.overrides.language
+        : undefined;
+    const detectedLang = LanguageDetector.detect(request.message, userPrefLanguage);
 
-    // 2. Strict Domain Guardrail Check
-    if (isOutOfDomainQuery(request.message)) {
+    // 2. Strict Domain Guardrail Check (bypassed if user is asking about an uploaded image)
+    if (!request.image && isOutOfDomainQuery(request.message)) {
       const refusalMessage =
         detectedLang === 'urdu'
           ? 'میں صرف نہج البلاغہ اور امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے خطبات، مکتوبات، حکمتوں اور دعاؤں کے لیے وقف ہوں۔ میں دنیاوی و عمومی معلومات (جیسے جغرافیہ، سیاست، کھیل وغیرہ) کا جواب نہیں دے سکتا۔\n\nآپ نہج البلاغہ سے متعلق کسی بھی خطبے، مکتوب (جیسے خط نمبر 53 بنام مالک اشتر)، حکمت یا دعا کے بارے میں بلا جھجھک دریافت فرما سکتے ہیں۔'
@@ -136,29 +140,64 @@ export class RAGService {
     const systemPrompt = PromptBuilder.buildPersonalizedSystemPrompt(preferences, detectedLang);
     const contextText = PromptBuilder.formatContextDocuments(retrievedDocs, detectedLang);
 
+    const languageInstruction =
+      detectedLang === 'urdu'
+        ? `🔴 لازمی ہدایت برائے زبان (URDU MANDATE):
+صارف کا سوال اردو میں ہے۔ آپ کا مکمل جواب (تفصیل، تشریح، اخلاقی رہنمائی، اور تمام حوالہ جات) صرف اور صرف باوقار اور شائستہ اردو زبان (اردو رسم الخط) میں ہونا چاہیے۔ انگریزی میں ہرگز جواب نہ دیں۔`
+        : `🔴 MANDATORY LANGUAGE INSTRUCTION (ENGLISH MANDATE):
+The user's query is in English. Your entire response (explanation, analysis, and references) must be in clear, dignified English.`;
+
     const promptMessage = `USER QUESTION:
 ${request.message}
 
 VERIFIED NAHJ AL-BALAGHA CONTEXT:
 ${contextText}
 
+${languageInstruction}
+
 INSTRUCTIONS:
 Provide an inspiring, accurate, and faithful response. If context is insufficient, explicitly state so.
-Always conclude your response with the formal Book Reference block as instructed in your system prompt.
+Always conclude your response with the formal Book Reference block in ${detectedLang === 'urdu' ? 'Urdu' : 'English'}.
 At the end of your response, on a new line, add:
 FOLLOW_UPS: <Question 1> | <Question 2> | <Question 3>
 TOPICS: <topic1>, <topic2>`;
 
-    // 8. Invoke LLM with resilient fallback
+    // 8. Invoke LLM with multimodal vision capability and resilient fallback
     let cleanAnswer = '';
     let suggestedFollowUps: string[] = [];
     let relatedTopics: string[] = [];
 
     try {
       const llm = getDefaultLLM();
+
+      let humanMessage: HumanMessage;
+      if (request.image) {
+        humanMessage = new HumanMessage({
+          content: [
+            {
+              type: 'text',
+              text: `${promptMessage}\n\n[USER HAS ATTACHED AN IMAGE]:
+The user has uploaded an image (such as an Arabic manuscript, calligraphy, book page, or excerpt).
+1. Inspect the image carefully: identify any Arabic calligraphy, Quranic/Nahj al-Balagha script, or manuscript text.
+2. Transcribe and explain the text visible in the image.
+3. Detail how it relates to Nahj al-Balagha and the teachings of Imam Ali (a.s.).
+4. Respond strictly in the designated language: ${detectedLang === 'urdu' ? 'URDU (اردو)' : 'ENGLISH'}.`,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: request.image,
+              },
+            },
+          ],
+        });
+      } else {
+        humanMessage = new HumanMessage(promptMessage);
+      }
+
       const response = await llm.invoke([
         new SystemMessage(systemPrompt),
-        new HumanMessage(promptMessage),
+        humanMessage,
       ]);
       const fullText = response.content.toString();
 
@@ -189,46 +228,79 @@ TOPICS: <topic1>, <topic2>`;
         const arabicPart = topDoc.metadata.arabicOriginal
           ? `\n\n> **${topDoc.metadata.arabicOriginal}**\n\n`
           : '\n\n';
-        cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${topDoc.content}"*\n\nThis passage emphasizes the profound commitment to justice, spiritual discernment, and ethical integrity that characterizes the path of eloquence.`;
+
+        if (detectedLang === 'urdu') {
+          const urduPart = topDoc.metadata.urduTranslation || topDoc.content;
+          const urduCat =
+            topDoc.metadata.passageType === 'sermon' ? 'خطبہ' :
+            topDoc.metadata.passageType === 'letter' ? 'مکتوب' :
+            topDoc.metadata.passageType === 'saying' ? 'حکمت' : 'دعا';
+          cleanAnswer = `آپ کے استفسار کے سلسلے میں، امیر المومنین حضرت علی علیہ السلام نہج البلاغہ کے **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'نہج البلاغہ'}) میں فرماتے ہیں:${arabicPart}*"${urduPart}"*\n\nیہ کلامِ مبارک عدل و انصاف، بصیرت اور تقویٰ کے ان بنیادی اصولوں کو اجاگر کرتا ہے جو نہج البلاغہ کا طرہ امتیاز ہیں۔`;
+        } else {
+          cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${topDoc.content}"*\n\nThis passage emphasizes the profound commitment to justice, spiritual discernment, and ethical integrity that characterizes the path of eloquence.`;
+        }
       } else {
-        cleanAnswer = `I have consulted the corpus of Nahj al-Balagha. To preserve strict religious integrity and avoid fabrication, I acknowledge that the specific reference directly answering this is not in the active knowledge base.`;
+        cleanAnswer =
+          detectedLang === 'urdu'
+            ? `میں نے نہج البلاغہ کے تمام مستند ذخیرے میں تلاش کی ہے۔ کلامِ امیر المومنین کی تقدس اور درستی کو برقرار رکھنے کے لیے، یہ واضح کرنا ضروری ہے کہ موجودہ نالج بیس میں اس مخصوص سوال کا براہ راست متن دستیاب نہیں ہے۔`
+            : `I have consulted the corpus of Nahj al-Balagha. To preserve strict religious integrity and avoid fabrication, I acknowledge that the specific reference directly answering this is not in the active knowledge base.`;
       }
     }
 
     // 9. Guarantee that every answer includes the formal Book Reference block
-    if (citations.length > 0 && !cleanAnswer.includes('Book Reference')) {
+    if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ')) {
       const topCitation = citations[0];
       const topDoc = retrievedDocs[0];
       const arabicSnippet = topCitation.arabicText
         ? `«${topCitation.arabicText.substring(0, 120)}...»`
-        : 'Available in original Arabic compilation';
+        : 'اصل عربی متن محفوظ ہے';
 
       const translationSnippet =
         detectedLang === 'urdu' && topDoc?.metadata?.urduTranslation
           ? topDoc.metadata.urduTranslation.substring(0, 160) + '...'
           : topCitation.text.substring(0, 160) + '...';
 
-      const referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:
+      let referenceBlock: string;
+      if (detectedLang === 'urdu') {
+        const urduCat =
+          topCitation.passageType === 'sermon' ? 'خطبہ' :
+          topCitation.passageType === 'letter' ? 'مکتوب' :
+          topCitation.passageType === 'saying' ? 'حکمت / قول' : 'دعا';
+
+        referenceBlock = `\n\n---\n### 📖 کتابی حوالہ و مستند ماخذ:
+- **کتاب:** نہج البلاغہ (*کلام امیر المومنین*) — جمع و تدوین: علامہ شریف رضی (وفات 406ھ)
+- **ماخذ و نمبر:** ${urduCat} #${topCitation.passageNumber}
+- **عنوان:** "${topDoc?.metadata?.passageTitle || `${urduCat} #${topCitation.passageNumber}`}"
+- **اصل عربی متن:** ${arabicSnippet}
+- **اردو ترجمہ:** "${translationSnippet}"
+- **مستند مترجم:** علامہ ذیشان حیدر جوادی / مفتی جعفر حسین`;
+      } else {
+        referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:
 - **Book:** Nahj al-Balagha (*Peak of Eloquence*) — Compiled by al-Sharif al-Radi (d. 406 AH)
 - **Source Category & Number:** ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber}
 - **Passage Title:** "${topDoc?.metadata?.passageTitle || `${topCitation.passageType} #${topCitation.passageNumber}`}"
 - **Original Arabic Reference:** ${arabicSnippet}
-- **Translation (${detectedLang === 'urdu' ? 'Urdu' : 'English'}):** "${translationSnippet}"
-- **Compiler / Translator Reference:** ${
-        detectedLang === 'urdu'
-          ? 'علامہ ذیشان حیدر جوادی / مفتی جعفر حسین'
-          : topCitation.translator || 'Syed Ali Reza / al-Sharif al-Radi'
-      }`;
+- **Translation (English):** "${translationSnippet}"
+- **Compiler / Translator Reference:** ${topCitation.translator || 'Syed Ali Reza / al-Sharif al-Radi'}`;
+      }
+
       cleanAnswer += referenceBlock;
     }
 
     // Fallbacks if LLM omitted them
     if (suggestedFollowUps.length === 0) {
-      suggestedFollowUps = [
-        'How does Imam Ali define the role of justice in governance?',
-        'Can you explain the deeper spiritual meaning behind this passage?',
-        'What are other sermons or sayings with similar themes?',
-      ];
+      suggestedFollowUps =
+        detectedLang === 'urdu'
+          ? [
+              'خط نمبر 53 میں عدل و انصاف کے بارے میں امام علی علیہ السلام کی کیا ہدایات ہیں؟',
+              'اس کلام کے پس پردہ کیا گہرے روحانی و اخلاقی معانی ہیں؟',
+              'نہج البلاغہ میں اسی موضوع سے متعلق دیگر کونسے خطبات یا اقوال ہیں؟',
+            ]
+          : [
+              'How does Imam Ali define the role of justice in governance?',
+              'Can you explain the deeper spiritual meaning behind this passage?',
+              'What are other sermons or sayings with similar themes?',
+            ];
     }
 
     if (relatedTopics.length === 0) {

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return errorResponse(formatZodError(validated.error) || 'Invalid chat message payload', 400);
     }
 
-    const { message, passageRef, overrides } = validated.data;
+    const { message, image, passageRef, overrides } = validated.data;
     let conversationId = validated.data.conversationId;
     let conversationSummary: string | null = null;
 
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
         userId,
         role: 'user',
         content: message,
+        imageUrl: image || null,
       });
 
       // Fetch conversation summary or recent messages to provide sliding conversational memory
@@ -63,11 +64,12 @@ export async function POST(req: NextRequest) {
       conversationId = conversationId || `conv-${Date.now()}`;
     }
 
-    // Run Personalized RAG Pipeline
+    // Run Personalized RAG Pipeline (supporting multimodal vision images)
     const ragResult = await ragService.generateAnswer(
       userId,
       {
         message,
+        image,
         passageRef,
         overrides,
       },

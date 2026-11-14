@@ -40,6 +40,10 @@ const MessageSchema = new Schema<IMessageDocument>(
       type: String,
       required: true,
     },
+    imageUrl: {
+      type: String,
+      default: null,
+    },
     citations: {
       type: [CitationSubSchema],
       default: [],
