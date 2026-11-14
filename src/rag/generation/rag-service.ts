@@ -121,16 +121,17 @@ export class RAGService {
       detectedLang
     );
 
-    // 5. Retrieve candidate documents from the Vector Database
+    // 5. Retrieve candidate documents using Hybrid Search (Dense Vector + BM25 Lexical + Entity Resolution)
     const retrievedDocs = await knowledgeRetriever.retrieve(
-      searchReadyQuery,
+      request.message,
       6,
       request.passageRef
         ? {
             passageType: request.passageRef.type,
             passageNumber: request.passageRef.number,
           }
-        : undefined
+        : undefined,
+      searchReadyQuery
     );
 
     // 6. Build structured citations
