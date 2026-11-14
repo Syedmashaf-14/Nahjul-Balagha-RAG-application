@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectDB } from '@/config/database';
 import { UserModel } from '@/db/models/user.model';
 import { OtpModel } from '@/db/models/otp.model';
+import { emailService } from '@/services/email.service';
 import bcrypt from 'bcryptjs';
 import { successResponse, errorResponse } from '@/lib/response';
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, salt);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-    // Upsert OTP record
+    // Upsert OTP record in MongoDB
     await OtpModel.findOneAndUpdate(
       { email: cleanEmail },
       {
@@ -49,16 +50,28 @@ export async function POST(req: NextRequest) {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    console.log(`\n======================================================`);
-    console.log(`📧 [EMAIL DISPATCH TO: ${cleanEmail}]`);
-    console.log(`🔐 Your Nahj al-Balagha Verification Code (OTP) is: ${otp}`);
-    console.log(`⏳ Code expires in 15 minutes.`);
-    console.log(`======================================================\n`);
+    // Send the verification code via Gmail SMTP + Nodemailer
+    try {
+      await emailService.sendOtpEmail({
+        to: cleanEmail,
+        name: name.trim(),
+        otp,
+      });
+    } catch (emailErr: any) {
+      console.error('Failed sending email via Nodemailer:', emailErr.message);
+      // Even if Gmail SMTP fails due to credentials or rate limits, don't crash registration;
+      // return a clear message so the user knows what to do.
+      return errorResponse(
+        `Unable to send OTP via Gmail SMTP: ${emailErr.message}. Please ensure GMAIL_USER and GMAIL_APP_PASSWORD are set in .env.local.`,
+        500
+      );
+    }
+
+    console.log(`✅ Verification OTP generated and dispatched for ${cleanEmail}`);
 
     return successResponse({
-      message: `A 6-digit verification code has been dispatched to ${cleanEmail}`,
+      message: `A 6-digit verification code has been dispatched to ${cleanEmail}. Please check your inbox and spam folder.`,
       email: cleanEmail,
-      devOtp: otp, // Surfaced so tester/user can immediately see the code
     });
   } catch (err: any) {
     console.error('Send OTP API Error:', err);

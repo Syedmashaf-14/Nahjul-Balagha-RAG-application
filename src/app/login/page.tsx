@@ -29,7 +29,6 @@ export default function AuthPage() {
   // OTP Verification state
   const [otpStep, setOtpStep] = useState(false);
   const [enteredOtp, setEnteredOtp] = useState('');
-  const [dispatchedOtp, setDispatchedOtp] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -79,8 +78,7 @@ export default function AuthPage() {
         return;
       }
 
-      setDispatchedOtp(json.data?.devOtp || null);
-      setInfoMessage(`A 6-digit verification code has been dispatched to ${email}`);
+      setInfoMessage(`A 6-digit verification code has been dispatched to ${email}. Please check your inbox and spam folder.`);
       setOtpStep(true);
     } catch {
       setError('Network error while requesting verification code. Please try again.');
@@ -195,23 +193,8 @@ export default function AuthPage() {
         )}
 
         {infoMessage && (
-          <div className="p-3 rounded-xl bg-[#EBF3EE] border border-[#D2E4D8] text-[#143E2E] text-xs text-center leading-relaxed">
+          <div className="p-3.5 rounded-xl bg-[#EBF3EE] border border-[#D2E4D8] text-[#143E2E] text-xs text-center leading-relaxed font-medium">
             {infoMessage}
-          </div>
-        )}
-
-        {/* Verification Code Testing Helper Banner */}
-        {otpStep && dispatchedOtp && (
-          <div className="p-3 rounded-2xl bg-[#F0ECE1] border border-[#D4CBB8] text-[#5A4526] text-xs text-center space-y-1">
-            <span className="font-bold text-[11px] uppercase tracking-wider block">
-              🔐 Verification Code:
-            </span>
-            <div className="text-xl font-mono font-bold tracking-widest text-[#143E2E]">
-              {dispatchedOtp}
-            </div>
-            <p className="text-[10px] text-[#7A684C]">
-              (Dispatched to your email; entered below to activate account)
-            </p>
           </div>
         )}
 
