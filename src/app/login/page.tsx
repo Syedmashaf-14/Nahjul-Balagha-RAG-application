@@ -14,16 +14,18 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { useLanguage } from '@/contexts/language-context';
 
 export default function AuthPage() {
   const router = useRouter();
   const { login, setGuest } = useAuth();
+  const { isUrdu } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [language, setLanguage] = useState<'english' | 'urdu'>('english');
+  const [language, setLanguage] = useState<'english' | 'urdu'>(isUrdu ? 'urdu' : 'english');
   const [explanationLevel, setExplanationLevel] = useState('intermediate');
 
   // OTP Verification state
@@ -137,15 +139,17 @@ export default function AuthPage() {
 
           <h1 className="text-2xl font-serif font-bold text-[#18231C]">
             {activeTab === 'login'
-              ? 'Welcome Back'
+              ? (isUrdu ? 'خوش آمدید' : 'Welcome Back')
               : otpStep
-              ? 'Verify Your Email'
-              : 'Create Your Account'}
+              ? (isUrdu ? 'ای میل کی تصدیق فرمائیں' : 'Verify Your Email')
+              : (isUrdu ? 'نیا اکاؤنٹ بنائیں' : 'Create Your Account')}
           </h1>
           <p className="text-xs text-[#58635B] max-w-xs mx-auto">
             {otpStep
-              ? `Enter the 6-digit code sent to ${email}`
-              : 'Access personalized learning paths, save reflection notes, and explore authentic Nahj al-Balagha teachings.'}
+              ? (isUrdu ? `پر بھیجا گیا 6 ہندسوں کا کوڈ درج کریں ${email}` : `Enter the 6-digit code sent to ${email}`)
+              : (isUrdu
+                  ? 'نہج البلاغہ کی مستند تعلیمات، ذاتی مطالعہ اور علمی نوٹس محفوظ کرنے کے لیے شامل ہوں۔'
+                  : 'Access personalized learning paths, save reflection notes, and explore authentic Nahj al-Balagha teachings.')}
           </p>
         </div>
 
@@ -165,7 +169,7 @@ export default function AuthPage() {
                   : 'text-[#58635B] hover:text-[#18231C]'
               }`}
             >
-              Sign In
+              {isUrdu ? 'سائن ان' : 'Sign In'}
             </button>
             <button
               type="button"
@@ -180,7 +184,7 @@ export default function AuthPage() {
                   : 'text-[#58635B] hover:text-[#18231C]'
               }`}
             >
-              Create Account
+              {isUrdu ? 'اکاؤنٹ بنائیں' : 'Create Account'}
             </button>
           </div>
         )}
@@ -406,7 +410,7 @@ export default function AuthPage() {
               className="w-full py-2.5 rounded-full bg-[#FBF9F5] border border-[#ECE7DE] hover:border-[#143E2E]/30 text-[#58635B] hover:text-[#18231C] text-xs font-semibold transition-all flex items-center justify-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#143E2E]" />
-              <span>Continue as Guest Seeker</span>
+              <span>{isUrdu ? 'بطور مہمان قاری جاری رکھیں' : 'Continue as Guest Seeker'}</span>
             </button>
           </div>
         )}

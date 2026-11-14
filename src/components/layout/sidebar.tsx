@@ -18,10 +18,12 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { useLanguage } from '@/contexts/language-context';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { language, isUrdu, t } = useLanguage();
 
   const isCurrent = (href: string) => {
     if (href === '/' && pathname === '/') return true;
@@ -49,17 +51,17 @@ export function Sidebar() {
         {/* Discover Section */}
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D] px-3 block mb-2">
-            Discover
+            {t('discover')}
           </span>
           <nav className="space-y-1">
             {[
-              { name: 'Overview', href: '/', icon: Home },
-              { name: 'Explore', href: '/explore', icon: Compass },
-              { name: 'Canonical Library & PDFs', href: '/reader', icon: BookOpen },
-              { name: 'My learning', href: '/learn', icon: GraduationCap },
-              { name: 'Saved', href: '/bookmarks', icon: Bookmark, badge: '1' },
-              { name: 'Notes', href: '/notes', icon: FileText },
-              { name: 'Collections', href: '/collections', icon: Layers },
+              { name: t('overview'), href: '/', icon: Home },
+              { name: t('explore'), href: '/explore', icon: Compass },
+              { name: t('library'), href: '/reader', icon: BookOpen },
+              { name: t('myLearning'), href: '/learn', icon: GraduationCap },
+              { name: t('saved'), href: '/bookmarks', icon: Bookmark, badge: '1' },
+              { name: t('notes'), href: '/notes', icon: FileText },
+              { name: t('collections'), href: '/collections', icon: Layers },
             ].map((item) => {
               const active = isCurrent(item.href);
               const Icon = item.icon;
@@ -79,7 +81,7 @@ export function Sidebar() {
                         active ? 'text-[#143E2E]' : 'text-[#8E877D]'
                       }`}
                     />
-                    <span>{item.name}</span>
+                    <span className={isUrdu ? 'font-arabic text-sm' : ''}>{item.name}</span>
                   </div>
                   {item.badge && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#E1EDE6] text-[#143E2E]">
@@ -95,7 +97,7 @@ export function Sidebar() {
         {/* Intelligence Section */}
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D] px-3 block mb-2">
-            Intelligence
+            {t('intelligence')}
           </span>
           <nav className="space-y-1">
             <Link
@@ -112,7 +114,7 @@ export function Sidebar() {
                     isCurrent('/chat') ? 'text-[#143E2E]' : 'text-[#8E877D]'
                   }`}
                 />
-                <span>Ask Nahj AI</span>
+                <span className={isUrdu ? 'font-arabic text-sm' : ''}>{t('askNahjAi')}</span>
               </div>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#EBF3EE] text-[#143E2E] border border-[#D2E4D8]">
                 AI
@@ -133,7 +135,7 @@ export function Sidebar() {
                     isCurrent('/settings') ? 'text-[#143E2E]' : 'text-[#8E877D]'
                   }`}
                 />
-                <span>Personalization</span>
+                <span className={isUrdu ? 'font-arabic text-sm' : ''}>{t('personalization')}</span>
               </div>
             </Link>
           </nav>
@@ -149,9 +151,9 @@ export function Sidebar() {
             </div>
             <div>
               <span className="text-xs font-bold text-[#2A231F] block leading-none">
-                Daily reflection
+                {t('dailyReflection')}
               </span>
-              <span className="text-[10px] text-[#8E877D]">Active learning journey</span>
+              <span className="text-[10px] text-[#8E877D]">{isUrdu ? 'تسلسل مطالعہ و علم' : 'Active learning journey'}</span>
             </div>
           </div>
 
@@ -177,14 +179,14 @@ export function Sidebar() {
           className="flex items-center gap-2.5 w-full p-1.5 rounded-xl hover:bg-[#F7F5F0] transition-colors"
         >
           <div className="w-8 h-8 rounded-full bg-[#E5ECE7] border border-[#D2E4D8] flex items-center justify-center text-xs font-bold text-[#143E2E] shrink-0">
-            {user.isGuest ? 'WU' : user.name.substring(0, 2).toUpperCase()}
+            {user.isGuest ? (isUrdu ? 'قاری' : 'WU') : user.name.substring(0, 2).toUpperCase()}
           </div>
           <div className="text-left flex-1 min-w-0">
             <p className="text-xs font-bold text-[#18231C] truncate leading-tight">
-              {user.isGuest ? 'Welcome, User' : user.name}
+              {user.isGuest ? t('welcomeUser') : user.name}
             </p>
             <p className="text-[10px] text-[#8E877D] truncate mt-0.5">
-              {user.isGuest ? 'Sign in to track progress' : 'Personalized Scholar'}
+              {user.isGuest ? t('signInToTrack') : (isUrdu ? 'محقق و قاری' : 'Personalized Scholar')}
             </p>
           </div>
           <MoreVertical className="w-3.5 h-3.5 text-[#8E877D]" />

@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { RetrievedDocument, PassageType } from '@/types/passage.types';
+import { useLanguage } from '@/contexts/language-context';
 
 // Arabic calligraphy tags mapping for aesthetic arch motifs
 const ARABIC_MOTIFS: Record<string, string> = {
@@ -49,6 +50,7 @@ function ExploreContent() {
   const searchParams = useSearchParams();
   const initialType = (searchParams.get('type') as PassageType) || '';
   const initialQuery = searchParams.get('q') || '';
+  const { language, isUrdu, t } = useLanguage();
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedType, setSelectedType] = useState<string>(initialType);
@@ -56,11 +58,37 @@ function ExploreContent() {
   const [displayCount, setDisplayCount] = useState<number>(24);
   const [loading, setLoading] = useState(true);
   const [bookmarkedId, setBookmarkedId] = useState<string | null>(null);
+  const [cardLangMap, setCardLangMap] = useState<Record<string, 'english' | 'urdu'>>({});
 
   // Active Passage Detail Modal State
   const [selectedDoc, setSelectedDoc] = useState<RetrievedDocument | null>(null);
   const [modalLanguage, setModalLanguage] = useState<'dual' | 'english' | 'urdu' | 'arabic'>('dual');
   const [copied, setCopied] = useState(false);
+
+  const toggleCardLang = (id: string, lang: 'english' | 'urdu') => {
+    setCardLangMap((prev) => ({ ...prev, [id]: lang }));
+  };
+
+  const openDocModal = (doc: RetrievedDocument) => {
+    setSelectedDoc(doc);
+    setModalLanguage(isUrdu ? 'urdu' : 'english');
+  };
+
+  const getPassageTypeLabel = (type?: string) => {
+    if (!isUrdu) return (type || 'Passage').toUpperCase();
+    switch ((type || '').toLowerCase()) {
+      case 'sermon':
+        return 'خطبہ';
+      case 'letter':
+        return 'مکتوب';
+      case 'saying':
+        return 'حکمت';
+      case 'dua':
+        return 'دعا';
+      default:
+        return 'کلام';
+    }
+  };
 
   const fetchPassages = (searchQ?: string, type?: string) => {
     setLoading(true);
@@ -135,13 +163,13 @@ function ExploreContent() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <span className="text-[11px] font-bold tracking-widest text-[#8E877D] uppercase">
-            THE COLLECTION
+            {t('theCollection')}
           </span>
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#18231C] tracking-tight">
-            Explore the Nahj al-Balagha
+            {t('exploreTitle')}
           </h1>
           <p className="text-xs md:text-sm text-[#58635B]">
-            Discover complete sermons, letters, sayings, and supplications by theme, source, or question. Click any card to read in full.
+            {t('exploreSubtitle')}
           </p>
         </div>
 
@@ -150,7 +178,7 @@ function ExploreContent() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#EBF3EE] border border-[#D2E4D8] text-[#143E2E] hover:bg-[#DDECE3] text-xs font-bold transition-all shadow-2xs self-start md:self-auto"
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span>Canonical Library & Official PDFs →</span>
+          <span>{t('canonicalLibraryPill')}</span>
         </Link>
       </div>
 
@@ -163,7 +191,7 @@ function ExploreContent() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search sermons, letters, sayings (e.g. Letter 53, Saying 81, justice)..."
+            placeholder={t('searchPlaceholder')}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#ECE7DE] rounded-full text-xs md:text-sm text-[#18231C] placeholder-[#8E877D] shadow-sm focus:outline-none focus:border-[#143E2E]/40 focus:ring-1 focus:ring-[#143E2E]/30 transition-all"
           />
         </form>
@@ -171,11 +199,11 @@ function ExploreContent() {
         {/* Source Filter Pills */}
         <div className="flex flex-wrap items-center gap-2">
           {[
-            { label: 'All sources', value: '' },
-            { label: 'Sermons (241)', value: 'sermon' },
-            { label: 'Letters (79)', value: 'letter' },
-            { label: 'Sayings (470)', value: 'saying' },
-            { label: "Du'as", value: 'dua' },
+            { label: t('allSources'), value: '' },
+            { label: t('sermonsFilter'), value: 'sermon' },
+            { label: t('lettersFilter'), value: 'letter' },
+            { label: t('sayingsFilter'), value: 'saying' },
+            { label: t('duasFilter'), value: 'dua' },
           ].map((item) => {
             const isActive = selectedType === item.value;
             return (
@@ -197,9 +225,11 @@ function ExploreContent() {
 
       {/* Subheader: Results count & Sort */}
       <div className="flex items-center justify-between text-xs text-[#8E877D] pt-1">
-        <span>Showing {visiblePassages.length} of {passages.length} authentic passages</span>
-        <div className="flex items-center gap-1 text-[#58635B] font-medium">
-          <span>Click any card to read full Arabic & translations</span>
+        <span>
+          {t('showingPassages')} {visiblePassages.length} {t('ofPassages')} {passages.length} {t('authenticPassages')}
+        </span>
+        <div className="flex items-center gap-1 text-[#58635B] font-medium hidden sm:flex">
+          <span>{t('clickCardHint')}</span>
         </div>
       </div>
 
@@ -212,9 +242,9 @@ function ExploreContent() {
       ) : passages.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-3xl border border-[#ECE7DE] p-8 shadow-sm">
           <BookOpen className="w-10 h-10 text-[#8E877D] mx-auto mb-3" />
-          <h3 className="text-base font-bold text-[#18231C]">No matching passages found</h3>
+          <h3 className="text-base font-bold text-[#18231C]">{t('noMatchesFound')}</h3>
           <p className="text-xs text-[#58635B] mt-1 max-w-sm mx-auto">
-            Try adjusting your search terms or select another category like Sermons, Letters, or Sayings.
+            {t('noMatchesDesc')}
           </p>
         </div>
       ) : (
@@ -226,11 +256,15 @@ function ExploreContent() {
               const topicKey = meta.topics?.[0]?.toLowerCase() || '';
               const arabicWord = ARABIC_MOTIFS[topicKey] || arch.arabic;
               const isBookmarked = bookmarkedId === doc.id;
+              const activeLang = cardLangMap[doc.id] || (isUrdu ? 'urdu' : 'english');
+              const previewText = activeLang === 'urdu'
+                ? (meta.urduTranslation || doc.content)
+                : (doc.content || meta.urduTranslation);
 
               return (
                 <div
-                  key={doc.id}
-                  onClick={() => setSelectedDoc(doc)}
+                  key={doc.id || idx}
+                  onClick={() => openDocModal(doc)}
                   className="bg-white rounded-2xl border border-[#ECE7DE] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer hover:border-[#143E2E]/40"
                 >
                   <div>
@@ -247,7 +281,7 @@ function ExploreContent() {
                       {/* Top Row: Type Pill & Bookmark Button */}
                       <div className="flex items-center justify-between relative z-10">
                         <span className="text-[10px] font-bold tracking-widest text-[#143E2E] uppercase bg-white/80 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-[#ECE7DE]/50">
-                          {meta.passageType} #{meta.passageNumber}
+                          {getPassageTypeLabel(meta.passageType)} #{meta.passageNumber}
                         </span>
 
                         <button
@@ -282,12 +316,46 @@ function ExploreContent() {
 
                     {/* Body Content */}
                     <div className="p-5 space-y-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D] block">
-                        {meta.passageType} {meta.passageNumber}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E877D] block">
+                          {getPassageTypeLabel(meta.passageType)} {meta.passageNumber}
+                        </span>
 
-                      <h3 className="text-base font-serif font-bold text-[#18231C] group-hover:text-[#143E2E] transition-colors line-clamp-1">
-                        {meta.passageTitle || `${meta.passageType} #${meta.passageNumber}`}
+                        {/* Inline Language Toggle for Instant Switch */}
+                        <div className="flex items-center gap-1 bg-[#F5F2EB] p-0.5 rounded-lg border border-[#ECE7DE]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardLang(doc.id, 'english');
+                            }}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                              activeLang === 'english'
+                                ? 'bg-[#143E2E] text-white shadow-xs'
+                                : 'text-[#58635B] hover:text-[#18231C]'
+                            }`}
+                          >
+                            EN
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardLang(doc.id, 'urdu');
+                            }}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-arabic transition-all ${
+                              activeLang === 'urdu'
+                                ? 'bg-[#143E2E] text-white shadow-xs'
+                                : 'text-[#58635B] hover:text-[#18231C]'
+                            }`}
+                          >
+                            اردو
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className={`text-base font-serif font-bold text-[#18231C] group-hover:text-[#143E2E] transition-colors line-clamp-1 ${activeLang === 'urdu' ? 'text-right font-arabic' : ''}`}>
+                        {meta.passageTitle || `${getPassageTypeLabel(meta.passageType)} #${meta.passageNumber}`}
                       </h3>
 
                       {/* Original Arabic Text (if present) */}
@@ -297,8 +365,16 @@ function ExploreContent() {
                         </p>
                       )}
 
-                      <p className="text-xs text-[#58635B] leading-relaxed line-clamp-2 pt-1">
-                        {meta.urduTranslation ? meta.urduTranslation.substring(0, 140) + '...' : doc.content}
+                      <p
+                        className={`text-xs text-[#58635B] leading-relaxed line-clamp-3 pt-1 ${
+                          activeLang === 'urdu' ? 'font-serif text-right leading-loose text-sm text-[#2A231F]' : ''
+                        }`}
+                      >
+                        {previewText
+                          ? previewText.length > 150
+                            ? previewText.substring(0, 150) + '...'
+                            : previewText
+                          : 'Translation available in full view.'}
                       </p>
                     </div>
                   </div>
@@ -307,18 +383,18 @@ function ExploreContent() {
                   <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-[#ECE7DE]/60 mt-auto">
                     <span className="text-[10px] text-[#8E877D] flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {Math.max(3, Math.round((doc.content?.length || 600) / 250))} min read
+                      {Math.max(3, Math.round((doc.content?.length || 600) / 250))} {t('minRead')}
                     </span>
 
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedDoc(doc);
+                        openDocModal(doc);
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#EBF3EE] text-[#143E2E] text-xs font-bold hover:bg-[#DDECE3] transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>Read Full</span>
+                      <span>{t('readFull')}</span>
                     </button>
                   </div>
                 </div>
@@ -333,7 +409,7 @@ function ExploreContent() {
                 onClick={() => setDisplayCount((prev) => prev + 24)}
                 className="px-6 py-2.5 rounded-full bg-white border border-[#ECE7DE] text-[#18231C] text-xs font-bold hover:border-[#143E2E]/40 hover:bg-[#FBF9F5] shadow-xs transition-all"
               >
-                Load More Passages ({passages.length - displayCount} remaining)
+                {t('loadMore')} ({passages.length - displayCount} {t('remaining')})
               </button>
             </div>
           )}
@@ -370,7 +446,7 @@ function ExploreContent() {
             <div className="flex items-center justify-between bg-[#FBF9F5] p-2 rounded-2xl border border-[#ECE7DE]">
               <span className="text-xs font-semibold text-[#58635B] flex items-center gap-1.5 pl-2">
                 <Languages className="w-3.5 h-3.5 text-[#143E2E]" />
-                <span>Display View:</span>
+                <span>{t('displayView')}</span>
               </span>
               <div className="flex items-center gap-1 text-xs">
                 {(['dual', 'english', 'urdu', 'arabic'] as const).map((lang) => (
@@ -383,7 +459,13 @@ function ExploreContent() {
                         : 'text-[#58635B] hover:text-[#18231C]'
                     }`}
                   >
-                    {lang === 'dual' ? 'Dual (Side-by-Side)' : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                    {lang === 'dual'
+                      ? t('dualView')
+                      : lang === 'english'
+                      ? t('englishOnly')
+                      : lang === 'urdu'
+                      ? t('urduOnly')
+                      : t('arabicOnly')}
                   </button>
                 ))}
               </div>
@@ -395,7 +477,7 @@ function ExploreContent() {
               {(modalLanguage === 'arabic' || modalLanguage === 'dual') && selectedDoc.metadata.arabicOriginal && (
                 <div className="p-6 rounded-2xl bg-[#F7F5EE] border border-[#ECE7DE]">
                   <span className="text-[10px] font-bold text-[#7A5835] uppercase tracking-wider block mb-2">
-                    النص العربي الأصيل المعتمد (Vocalized Arabic Original)
+                    {t('vocalizedArabic')}
                   </span>
                   <p className="font-arabic text-xl md:text-2xl text-[#143E2E] text-right leading-loose selection:bg-[#143E2E] selection:text-white">
                     {selectedDoc.metadata.arabicOriginal}
@@ -407,7 +489,7 @@ function ExploreContent() {
               {(modalLanguage === 'english' || modalLanguage === 'dual') && (
                 <div className="p-6 rounded-2xl bg-white border border-[#ECE7DE] space-y-2">
                   <span className="text-[10px] font-bold text-[#143E2E] uppercase tracking-wider block">
-                    English Translation (Syed Ali Reza Edition)
+                    {t('englishTranslationTitle')}
                   </span>
                   <p className="text-sm md:text-base text-[#18231C] leading-relaxed italic">
                     &ldquo;{selectedDoc.content}&rdquo;
@@ -419,7 +501,7 @@ function ExploreContent() {
               {(modalLanguage === 'urdu' || modalLanguage === 'dual') && selectedDoc.metadata.urduTranslation && (
                 <div className="p-6 rounded-2xl bg-[#FBF9F5] border border-[#ECE7DE] space-y-2">
                   <span className="text-[10px] font-bold text-[#244866] uppercase tracking-wider block text-right">
-                    اردو ترجمہ و تشریح (علامہ مفتی جعفر حسین / علامہ ذیشان حیدر جوادی)
+                    {t('urduTranslationTitle')}
                   </span>
                   <p className="text-sm md:text-base text-[#18231C] text-right leading-loose font-serif">
                     {selectedDoc.metadata.urduTranslation}
@@ -431,9 +513,9 @@ function ExploreContent() {
             {/* Canonical Reference & Tags */}
             <div className="p-4 rounded-2xl bg-[#EBF3EE]/60 border border-[#D2E4D8] flex flex-wrap items-center justify-between gap-3 text-xs text-[#18231C]">
               <div>
-                <span className="font-bold">Canonical Citation: </span>
+                <span className="font-bold">{t('canonicalCitation')} </span>
                 <span>
-                  Nahj al-Balagha, {selectedDoc.metadata.passageType} #{selectedDoc.metadata.passageNumber}
+                  Nahj al-Balagha, {getPassageTypeLabel(selectedDoc.metadata.passageType)} #{selectedDoc.metadata.passageNumber}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -457,7 +539,7 @@ function ExploreContent() {
                   className="px-3.5 py-2 rounded-xl bg-white border border-[#ECE7DE] text-xs font-semibold text-[#58635B] hover:text-[#18231C] flex items-center gap-1.5 shadow-xs"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-[#143E2E]" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Copied to Clipboard' : 'Copy Text'}</span>
+                  <span>{copied ? t('copied') : t('copyPassage')}</span>
                 </button>
 
                 <button
@@ -465,7 +547,7 @@ function ExploreContent() {
                   className="px-3.5 py-2 rounded-xl bg-white border border-[#ECE7DE] text-xs font-semibold text-[#58635B] hover:text-[#18231C] flex items-center gap-1.5 shadow-xs"
                 >
                   <Bookmark className="w-3.5 h-3.5" />
-                  <span>Bookmark</span>
+                  <span>{t('bookmarkPassage')}</span>
                 </button>
               </div>
 
@@ -475,7 +557,7 @@ function ExploreContent() {
                   className="px-4 py-2 rounded-xl bg-[#FBF9F5] border border-[#ECE7DE] text-[#18231C] text-xs font-bold hover:bg-[#EBF3EE] transition-all flex items-center gap-1.5"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Read in Canonical Library</span>
+                  <span>{t('library')}</span>
                 </Link>
 
                 <Link
@@ -485,7 +567,7 @@ function ExploreContent() {
                   className="px-5 py-2 rounded-xl bg-[#143E2E] hover:bg-[#194B37] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Reflect with Nahj AI</span>
+                  <span>{t('askAboutPassage')}</span>
                 </Link>
               </div>
             </div>

@@ -3,6 +3,7 @@ import './globals.css';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { AuthProvider } from '@/contexts/auth-context';
+import { LanguageProvider } from '@/contexts/language-context';
 
 export const metadata: Metadata = {
   title: 'Nahj al-Balagha | Path of Eloquence',
@@ -19,13 +20,15 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-[#FBF9F5] text-[#18231C] flex flex-col md:flex-row antialiased selection:bg-[#EBF3EE] selection:text-[#143E2E]">
         <AuthProvider>
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0 md:ml-64">
-            <Topbar />
-            <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
-              {children}
-            </main>
-          </div>
+          <LanguageProvider>
+            <Sidebar />
+            <div className="flex-1 flex flex-col min-w-0 md:ml-64">
+              <Topbar />
+              <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+                {children}
+              </main>
+            </div>
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>
