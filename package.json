@@ -51,6 +51,9 @@
     "winston": "^3.19.0",
     "zod": "^4.6.7"
   },
+  "overrides": {
+    "zod": "$zod"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/turbopack": "4.3.3",
