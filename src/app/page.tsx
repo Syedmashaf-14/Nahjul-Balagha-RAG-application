@@ -106,7 +106,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 text-right">
           <TrendingUp className="w-4 h-4 text-[#143E2E]" />
           <div>
-            <span className="text-xs font-bold text-[#18231C] block leading-tight">792 passages</span>
+            <span className="text-xs font-bold text-[#18231C] block leading-tight">799 passages</span>
             <span className="text-[10px] text-[#8E877D]">in canonical library</span>
           </div>
         </div>

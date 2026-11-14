@@ -22,9 +22,18 @@ export async function GET(req: NextRequest) {
       const numMatch = query.match(/\d+/);
       const targetNum = numMatch ? parseInt(numMatch[0], 10) : null;
 
-      // 1. Direct match on passage number or title or Arabic text from all 792 canonical passages
+      // 1. Direct match on passage number or title or Arabic text from all 799 canonical passages
       const directMatches = SEED_PASSAGES.filter((p) => {
-        const matchesType = !type || p.chapter?.toLowerCase() === type.toLowerCase();
+        const matchesType =
+          !type ||
+          (type.toLowerCase() === 'dua'
+            ? p.chapter?.toLowerCase() === 'dua' ||
+              (p.topics || []).some((t) =>
+                ['dua', 'supplication', 'prayer', 'munajat', 'istighfar', 'istisqa'].includes(
+                  t.toLowerCase()
+                )
+              )
+            : p.chapter?.toLowerCase() === type.toLowerCase());
         if (!matchesType) return false;
 
         if (targetNum !== null && p.number === targetNum) return true;
@@ -88,9 +97,21 @@ export async function GET(req: NextRequest) {
       let matchedPassages = [...SEED_PASSAGES];
 
       if (type) {
-        matchedPassages = matchedPassages.filter(
-          (p) => p.chapter?.toLowerCase() === type.toLowerCase()
-        );
+        if (type.toLowerCase() === 'dua') {
+          matchedPassages = matchedPassages.filter(
+            (p) =>
+              p.chapter?.toLowerCase() === 'dua' ||
+              (p.topics || []).some((t) =>
+                ['dua', 'supplication', 'prayer', 'munajat', 'istighfar', 'istisqa'].includes(
+                  t.toLowerCase()
+                )
+              )
+          );
+        } else {
+          matchedPassages = matchedPassages.filter(
+            (p) => p.chapter?.toLowerCase() === type.toLowerCase()
+          );
+        }
       }
 
       docs = matchedPassages.slice(0, limit).map((p) => ({

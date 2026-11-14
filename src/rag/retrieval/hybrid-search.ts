@@ -92,12 +92,39 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     ],
   },
   {
-    entityName: 'Kumayl ibn Ziyad (Nature and Divisions of Knowledge)',
-    passageType: 'saying',
-    passageNumbers: [147],
+    entityName: 'Kumayl ibn Ziyad (Nature of Knowledge & Dua Kumayl)',
+    passageType: 'dua',
+    passageNumbers: [1],
     canonicalTerms: [
-      'kumayl', 'kumail', 'knowledge vs wealth', 'containers of knowledge',
-      'کمیل', 'کمیل بن زیاد'
+      'kumayl', 'kumail', 'dua kumayl', 'dua kumail', 'knowledge vs wealth',
+      'کمیل', 'کمیل بن زیاد', 'دعائے کمیل', 'دعاء کمیل'
+    ],
+  },
+  {
+    entityName: 'Dua al-Sabah (Morning Supplication)',
+    passageType: 'dua',
+    passageNumbers: [2],
+    canonicalTerms: [
+      'sabah', 'dua sabah', 'morning prayer', 'morning supplication',
+      'دعائے صباح', 'دعاء الصباح', 'صبح کی دعا'
+    ],
+  },
+  {
+    entityName: 'Munajat of Imam Ali in Masjid Kufa',
+    passageType: 'dua',
+    passageNumbers: [3],
+    canonicalTerms: [
+      'munajat', 'munajat kufa', 'masjid kufa', 'kufa prayer',
+      'مناجات', 'مناجات مسجد کوفہ', 'مسجد کوفہ'
+    ],
+  },
+  {
+    entityName: 'Dua al-Istisqa (Supplication for Rain)',
+    passageType: 'sermon',
+    passageNumbers: [115, 143],
+    canonicalTerms: [
+      'istisqa', 'dua istisqa', 'rain', 'prayer for rain', 'drought',
+      'بارش کی دعا', 'استسقاء', 'قحط', 'طلب باران'
     ],
   },
   {
