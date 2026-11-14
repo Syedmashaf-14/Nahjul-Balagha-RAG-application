@@ -43,11 +43,24 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      // In production/development session handler
-      login(email, email.split('@')[0]);
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.error || (isUrdu ? 'غلط ای میل یا پاس ورڈ۔ براہ کرم دوبارہ کوشش کریں۔' : 'Invalid email or password. Please verify your credentials.'));
+        setLoading(false);
+        return;
+      }
+
+      // Verified user from MongoDB database
+      login(json.data.user.email, json.data.user.name, json.data.user.id);
       router.push('/');
-    } catch {
-      setError('Failed to sign in. Please verify your credentials.');
+    } catch (err: any) {
+      setError(err?.message || (isUrdu ? 'لاگ ان کرنے میں ناکامی۔ براہ کرم انٹرنیٹ یا ڈیٹا بیس کنکشن چیک کریں۔' : 'Failed to sign in. Please verify your credentials.'));
     } finally {
       setLoading(false);
     }
@@ -75,9 +88,26 @@ export default function AuthPage() {
 
       const json = await res.json();
       if (!json.success) {
-        setError(json.error || 'Failed to dispatch verification code');
-        setLoading(false);
-        return;
+        // Fallback to direct registration if email dispatch is unavailable
+        const regRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+          }),
+        });
+        const regJson = await regRes.json();
+        if (regJson.success) {
+          login(regJson.data.email, regJson.data.name, regJson.data.id);
+          router.push('/');
+          return;
+        } else {
+          setError(regJson.error || json.error || 'Failed to dispatch verification code');
+          setLoading(false);
+          return;
+        }
       }
 
       setInfoMessage(`A 6-digit verification code has been dispatched to ${email}. Please check your inbox and spam folder.`);
@@ -113,7 +143,7 @@ export default function AuthPage() {
       }
 
       // Success! Update auth context and redirect
-      login(email, name);
+      login(email, name, json.data?.user?.id);
       router.push('/');
     } catch {
       setError('Failed to verify code. Please try again.');

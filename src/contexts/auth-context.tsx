@@ -12,7 +12,7 @@ export interface AuthUser {
 
 interface AuthContextType {
   user: AuthUser;
-  login: (email: string, name?: string) => void;
+  login: (email: string, name?: string, id?: string) => void;
   logout: () => void;
   setGuest: () => void;
 }
@@ -47,9 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = (email: string, name?: string) => {
+  const login = (email: string, name?: string, id?: string) => {
     const loggedUser: AuthUser = {
-      id: `user_${Math.random().toString(36).substring(2, 9)}`,
+      id: id || `user_${Math.random().toString(36).substring(2, 9)}`,
       name: name || email.split('@')[0],
       email,
       role: 'user',
