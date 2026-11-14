@@ -65,24 +65,82 @@ export class DailyWisdomService {
       focus: 'wisdom',
     };
 
-    // Use complete canonical library (799 passages)
+    // Use complete canonical library
     const allPassages = (canonicalPassages && canonicalPassages.length > 0)
       ? (canonicalPassages as any[])
       : SEED_PASSAGES;
 
-    // Filter available sayings, duas, and sermons
-    const pool = allPassages.filter((p) => {
+    // Beautiful, short, authentic duas of Amir al-Mu'minin (compact invocations)
+    const shortDuas = [
+      {
+        chapter: 'dua',
+        number: 215,
+        title: 'Supplication for Honor & Self-Sufficiency',
+        arabicText: 'اللَّهُمَّ صُنْ وَجْهِي بِالْيَسَارِ، وَلاَ تَبْذُلْ جَاهِيَ بِالْإِقْتَارِ، فَأَسْتَرْزِقَ طَالِبِي رِزْقِكَ، وَأَسْتَعْطِفَ شِرَارَ خَلْقِكَ.',
+        translationText: 'O Lord! Preserve my dignity with independence, and let not poverty humiliate my honor, so that I may not have to seek sustenance from those who themselves seek sustenance from You.',
+        urduTranslation: 'اے پروردگار! میرے وقار و عزت کو خودداری سے محفوظ فرما، اور مجھے ناداری کے ذریعے دوسروں کے سامنے ہاتھ پھیلانے سے بچا۔',
+      },
+      {
+        chapter: 'dua',
+        number: 115,
+        title: 'Supplication for Rain & Divine Compassion',
+        arabicText: 'اللَّهُمَّ اسْقِنَا ذُلَلَ السَّحَابِ دُونَ صِعَابِهَا، وَانْشُرْ عَلَيْنَا رَحْمَتَكَ، وَأَسْبِغْ عَلَيْنَا نِعْمَتَكَ بِالْغَيْثِ الْمُغِيثِ.',
+        translationText: 'O Allah! Quench us with gentle, beneficial clouds and not destructive storms, and spread Your divine mercy upon us through life-giving rain.',
+        urduTranslation: 'اے اللہ! ہم پر رحمت کی بارانِ کرم نازل فرما اور ہمیں اپنی بخشش و مغفرت سے شاداب و سیراب فرما۔',
+      },
+      {
+        chapter: 'dua',
+        number: 7,
+        title: 'Supplication for Sincere Forgiveness',
+        arabicText: 'اللَّهُمَّ اغْفِرْ لِي مَا أَنْتَ أَعْلَمُ بِهِ مِنِّي، فَإِنْ عُدْتُ فَعُدْ عَلَيَّ بِمَغْفِرَتِكَ، وَاغْفِرْ لِي مَا وَأَيْتُ مِنْ نَفْسِي.',
+        translationText: 'O Allah! Forgive in me what You know better than I; and if I falter again, renew Your forgiveness toward me.',
+        urduTranslation: 'اے اللہ! میرے ان گناہوں کو معاف فرما جنہیں تو مجھ سے بہتر جانتا ہے، اور اپنے عفو و کرم سے میری توبہ قبول فرما۔',
+      },
+      {
+        chapter: 'dua',
+        number: 3,
+        title: 'Munajat: Seeking Divine Sanctuary',
+        arabicText: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الأَمَانَ يَوْمَ لاَ يَنْفَعُ مَالٌ وَلاَ بَنُونَ إِلاَّ مَنْ أَتَى اللَّهَ بِقَلْبٍ سَلِيمٍ.',
+        translationText: 'O Allah, I beseech You for sanctuary on the Day when neither wealth nor sons shall avail, except one who brings to Allah a sound heart.',
+        urduTranslation: 'اے اللہ! میں تجھ سے اس دن کی پناہ مانگتا ہوں جس دن نہ مال کام آئے گا نہ اولاد، سوائے اس کے جو قلبِ سلیم لے کر حاضر ہو۔',
+      },
+      {
+        chapter: 'dua',
+        number: 1,
+        title: 'Invocation of Encompassing Mercy',
+        arabicText: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ، وَبِقُوَّتِكَ الَّتِي قَهَرْتَ بِهَا كُلَّ شَيْءٍ، وَخَضَعَ لَهَا كُلُّ شَيْءٍ.',
+        translationText: 'O Allah, I beseech You by Your mercy which encompasses all things, and by Your power by which You dominate all things.',
+        urduTranslation: 'اے اللہ! میں تجھ سے تیری اس رحمت کے وسیلے سے سوال کرتا ہوں جو ہر شے پر محیط ہے اور تیری اس قوت کے صدقے جو ہر چیز پر غالب ہے۔',
+      },
+      {
+        chapter: 'dua',
+        number: 2,
+        title: 'Supplication of Dawn & Gratitude',
+        arabicText: 'اللَّهُمَّ يَا مَنْ دَلَعَ لِسَانَ الصَّبَاحِ بِنُطْقِ تَبَلُّجِهِ، صَلِّ عَلَى مُحَمَّدٍ وَآلِهِ، وَافْتَحْ لَنَا أَبْوَابَ الْخَيْرِ وَالرَّحْمَةِ.',
+        translationText: 'O Allah, O He who unrolled the tongue of morning with the radiance of dawn, open for us the gates of goodness and divine mercy.',
+        urduTranslation: 'اے اللہ! جس نے صبح کی زبان کو روشنی کی تجلی سے گویا کیا، ہمارے لیے خیر و رحمت کے دروازے کشادہ فرما۔',
+      },
+    ];
+
+    // Filter strictly for SHORT sayings of Imam Ali (under 260 characters)
+    // Strictly exclude long sermons or bulky treatises so wisdom cards remain punchy and bite-sized
+    const shortSayings = allPassages.filter((p) => {
       const ch = p.chapter?.toLowerCase();
-      return ch === 'saying' || ch === 'dua' || ch === 'sermon';
+      if (ch !== 'saying') return false;
+      const arLen = (p.arabicText || '').length;
+      const enLen = (p.translationText || '').length;
+      const urLen = (p.urduTranslation || '').length;
+      return arLen > 15 && arLen <= 260 && enLen > 10 && enLen <= 280 && urLen > 10 && urLen <= 280;
     });
 
-    const activePool = pool.length > 0 ? pool : allPassages;
+    // Combined concise pool of short duas and short sayings of Imam Ali
+    const activePool = [...shortDuas, ...shortSayings];
 
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24
     );
 
-    // If user clicked "New Wisdom" (forceRefresh), pick a truly random quote or dua!
+    // If user clicked "New Wisdom" (forceRefresh), pick a truly random short quote or short dua!
     let candidate;
     if (forceRefresh) {
       const randomIdx = Math.floor(Math.random() * activePool.length);
