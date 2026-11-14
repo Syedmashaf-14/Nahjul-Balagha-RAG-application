@@ -5,6 +5,7 @@ import { getCreativeLLM } from '../config/llm';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { IDailyWisdom } from '../types/api.types';
 import { SEED_PASSAGES } from '../ingestion/seed-data';
+import canonicalPassages from '../ingestion/canonical-passages.json';
 
 // Islamic month themes mapping
 const ISLAMIC_MONTH_THEMES: Record<string, { theme: string; focus: string }> = {
@@ -64,20 +65,35 @@ export class DailyWisdomService {
       focus: 'wisdom',
     };
 
-    // Filter available sayings and khutbat from full database
-    const availableSayings = SEED_PASSAGES.filter((p) => p.chapter?.toLowerCase() === 'saying');
-    const availableSermons = SEED_PASSAGES.filter((p) => p.chapter?.toLowerCase() === 'sermon');
-    const pool = availableSayings.length > 0 ? availableSayings : SEED_PASSAGES;
+    // Use complete canonical library (799 passages)
+    const allPassages = (canonicalPassages && canonicalPassages.length > 0)
+      ? (canonicalPassages as any[])
+      : SEED_PASSAGES;
 
-    // Deterministic yet daily-rotating selection: hash of day + date + userId length
+    // Filter available sayings, duas, and sermons
+    const pool = allPassages.filter((p) => {
+      const ch = p.chapter?.toLowerCase();
+      return ch === 'saying' || ch === 'dua' || ch === 'sermon';
+    });
+
+    const activePool = pool.length > 0 ? pool : allPassages;
+
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24
     );
-    const selectedIdx = (dayOfYear * 7 + day * 13) % pool.length;
-    const candidate = pool[selectedIdx] || pool[0];
+
+    // If user clicked "New Wisdom" (forceRefresh), pick a truly random quote or dua!
+    let candidate;
+    if (forceRefresh) {
+      const randomIdx = Math.floor(Math.random() * activePool.length);
+      candidate = activePool[randomIdx];
+    } else {
+      const selectedIdx = (dayOfYear * 7 + day * 13) % activePool.length;
+      candidate = activePool[selectedIdx] || activePool[0];
+    }
 
     const fallbackWisdom: IDailyWisdom = {
-      _id: `daily-wisdom-${candidate.number}-${dayOfYear}`,
+      _id: `daily-wisdom-${candidate.chapter}-${candidate.number}-${Date.now()}`,
       userId,
       passageType: (candidate.chapter?.toLowerCase() || 'saying') as any,
       passageNumber: candidate.number,
@@ -85,12 +101,17 @@ export class DailyWisdomService {
       translationText: candidate.translationText || candidate.title || '',
       urduTranslation: candidate.urduTranslation || undefined,
       language: 'english',
-      reflectionQuestion: `In this blessed month of ${islamicMonth}, reflect on how Imam Ali's teaching inspires excellence and ethical conduct today.`,
-      topic: monthConfig.focus,
+      reflectionQuestion: `In this blessed month of ${islamicMonth}, reflect on how Imam Ali's teaching inspires excellence, sincere prayer, and ethical conduct today.`,
+      topic: candidate.chapter === 'dua' ? 'supplication' : monthConfig.focus,
       deliveredAt: new Date(),
       createdAt: new Date(),
       interacted: false,
     };
+
+    // If forceRefresh, return immediately with the fresh candidate (no Mongo caching delay)
+    if (forceRefresh) {
+      return fallbackWisdom;
+    }
 
     try {
       await connectDB();
