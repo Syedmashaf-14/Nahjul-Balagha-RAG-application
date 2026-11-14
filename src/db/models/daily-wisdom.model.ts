@@ -28,6 +28,10 @@ const DailyWisdomSchema = new Schema<IDailyWisdomDocument>(
       type: String,
       required: true,
     },
+    urduTranslation: {
+      type: String,
+      default: null,
+    },
     language: {
       type: String,
       default: 'english',

@@ -12,25 +12,76 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const query = searchParams.get('q')?.trim();
     const type = (searchParams.get('type') as PassageType) || undefined;
-    const limit = parseInt(searchParams.get('limit') || '18', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
 
     let docs: RetrievedDocument[] = [];
+    const seen = new Set<string>();
 
     if (query) {
-      // Vector search for specific semantic search query
-      const retrieved = await knowledgeRetriever.retrieve(query, limit * 2, {
-        passageType: type,
+      const qLower = query.toLowerCase();
+      const numMatch = query.match(/\d+/);
+      const targetNum = numMatch ? parseInt(numMatch[0], 10) : null;
+
+      // 1. Direct match on passage number or title or Arabic text from all 792 canonical passages
+      const directMatches = SEED_PASSAGES.filter((p) => {
+        const matchesType = !type || p.chapter?.toLowerCase() === type.toLowerCase();
+        if (!matchesType) return false;
+
+        if (targetNum !== null && p.number === targetNum) return true;
+        if (p.title?.toLowerCase().includes(qLower)) return true;
+        if (p.arabicText?.includes(query)) return true;
+        if (p.translationText?.toLowerCase().includes(qLower)) return true;
+        if (p.urduTranslation?.includes(query)) return true;
+        return false;
       });
 
-      // Strictly deduplicate by passage type + number so the same sermon/saying never appears twice
-      const seen = new Set<string>();
-      for (const d of retrieved) {
-        const key = `${d.metadata.passageType}_${d.metadata.passageNumber}`;
+      for (const p of directMatches) {
+        const key = `${p.chapter?.toLowerCase()}_${p.number}`;
         if (!seen.has(key)) {
           seen.add(key);
-          docs.push(d);
+          docs.push({
+            id: `canonical_${p.chapter?.toLowerCase() || 'passage'}_${p.number}`,
+            content: p.translationText || p.arabicText || '',
+            metadata: {
+              book: 'Nahj al-Balagha',
+              sourceId: `src_${p.number}`,
+              passageType: (p.chapter?.toLowerCase() || 'sermon') as PassageType,
+              passageNumber: p.number,
+              passageTitle: p.title || `${p.chapter} ${p.number}`,
+              language: 'english',
+              translator: p.translator || 'Syed Ali Reza / Allama Mufti Jafar Hussain',
+              contentType: 'translation',
+              commentaryAuthor: null,
+              chapter: p.chapter || null,
+              section: p.section || null,
+              chunkIndex: 0,
+              totalChunks: 1,
+              arabicOriginal: p.arabicText || null,
+              urduTranslation: p.urduTranslation || null,
+              topics: p.topics || [],
+              ingestedAt: new Date().toISOString(),
+              chunkSize: (p.translationText || '').length,
+            },
+            score: 1.0,
+          });
         }
         if (docs.length >= limit) break;
+      }
+
+      // 2. Vector search if more results needed
+      if (docs.length < limit) {
+        const retrieved = await knowledgeRetriever.retrieve(query, (limit - docs.length) * 2, {
+          passageType: type,
+        });
+
+        for (const d of retrieved) {
+          const key = `${d.metadata.passageType}_${d.metadata.passageNumber}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            docs.push(d);
+          }
+          if (docs.length >= limit) break;
+        }
       }
     } else {
       // Category browsing (All sources, Sermons, Letters, Sayings, Duas)
@@ -42,7 +93,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      docs = matchedPassages.map((p, idx) => ({
+      docs = matchedPassages.slice(0, limit).map((p) => ({
         id: `canonical_${p.chapter?.toLowerCase() || 'passage'}_${p.number}`,
         content: p.translationText || p.arabicText || '',
         metadata: {
@@ -52,7 +103,7 @@ export async function GET(req: NextRequest) {
           passageNumber: p.number,
           passageTitle: p.title || `${p.chapter} ${p.number}`,
           language: 'english',
-          translator: p.translator || 'Syed Ali Reza / Allama Zeeshan Haider Jawadi',
+          translator: p.translator || 'Syed Ali Reza / Allama Mufti Jafar Hussain',
           contentType: 'translation',
           commentaryAuthor: null,
           chapter: p.chapter || null,

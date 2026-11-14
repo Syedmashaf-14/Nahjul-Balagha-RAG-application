@@ -92,7 +92,14 @@ class RobustEmbeddings extends Embeddings {
     super(params ?? {});
     this.fallback = new DeterministicEmbeddings(dimensions);
     const apiKey = process.env.OPENAI_API_KEY;
-    if (apiKey && !apiKey.startsWith('sk-demo') && !apiKey.startsWith('sk-mock') && apiKey.length > 20) {
+    // Note: OpenRouter keys (starting with sk-or-) do not support standard OpenAI embeddings endpoint
+    if (
+      apiKey &&
+      !apiKey.startsWith('sk-or-') &&
+      !apiKey.startsWith('sk-demo') &&
+      !apiKey.startsWith('sk-mock') &&
+      apiKey.length > 20
+    ) {
       try {
         this.primary = new OpenAIEmbeddings({
           openAIApiKey: apiKey,

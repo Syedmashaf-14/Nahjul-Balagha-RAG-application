@@ -144,6 +144,7 @@ export interface IDailyWisdom {
   passageNumber: number;
   arabicText: string | null;
   translationText: string;
+  urduTranslation?: string | null;
   language: string;
   reflectionQuestion: string | null;
   topic: string;
