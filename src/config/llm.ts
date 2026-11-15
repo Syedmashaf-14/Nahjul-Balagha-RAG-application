@@ -29,34 +29,46 @@ const defaultConfig: LLMConfig = {
 
 export function createLLM(config: Partial<LLMConfig> = {}): BaseChatModel {
   const finalConfig = { ...defaultConfig, ...config };
-  const apiKey =
-    process.env.OPENROUTER_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    'sk-mock-key-for-local-build';
-
+  
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  
+  // Determine provider: OpenRouter if key is sk-or-v1 or provider explicitly openrouter
   const isOpenRouter =
-    apiKey.startsWith('sk-or-v1-') ||
     finalConfig.provider === 'openrouter' ||
-    Boolean(process.env.OPENROUTER_API_KEY);
+    Boolean(openRouterKey && !openAIKey) ||
+    Boolean(openAIKey?.startsWith('sk-or-v1-'));
 
-  if (isOpenRouter) {
+  const apiKey = isOpenRouter
+    ? (openRouterKey || openAIKey || 'sk-mock-key')
+    : (openAIKey || openRouterKey || 'sk-mock-key');
+
+  if (isOpenRouter || apiKey.startsWith('sk-or-v1-')) {
+    // OpenRouter requires provider prefix, e.g. "openai/gpt-4o" or "openai/gpt-4o-mini"
+    let modelName = finalConfig.model;
+    if (!modelName.includes('/')) {
+      modelName = `openai/${modelName}`;
+    }
+
     return new ChatOpenAI({
-      modelName: finalConfig.model,
+      modelName,
       temperature: finalConfig.temperature,
       maxTokens: finalConfig.maxTokens,
       apiKey: apiKey,
       configuration: {
         baseURL: 'https://openrouter.ai/api/v1',
         defaultHeaders: {
-          'HTTP-Referer': 'http://localhost:3000',
+          'HTTP-Referer': 'https://nehjulbalagah.vercel.app',
           'X-Title': 'Nahj al-Balagha Knowledge Platform',
         },
       },
     });
   }
 
+  // Direct OpenAI endpoint
+  const cleanOpenAIModel = finalConfig.model.replace(/^openai\//, '');
   return new ChatOpenAI({
-    modelName: finalConfig.model,
+    modelName: cleanOpenAIModel,
     temperature: finalConfig.temperature,
     maxTokens: finalConfig.maxTokens,
     openAIApiKey: apiKey,

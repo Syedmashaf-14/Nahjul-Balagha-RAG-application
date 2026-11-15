@@ -107,7 +107,8 @@ For explanatory responses, conclude with a standardized reference block formatte
 
   public static formatContextDocuments(
     documents: RetrievedDocument[],
-    targetLanguage: 'english' | 'urdu' = 'english'
+    targetLanguage: 'english' | 'urdu' = 'english',
+    fullTextRequested: boolean = false
   ): string {
     if (documents.length === 0) {
       return 'NO DIRECT PASSAGES RETRIEVED.';
@@ -117,11 +118,30 @@ For explanatory responses, conclude with a standardized reference block formatte
       .map((doc, idx) => {
         const meta = doc.metadata;
         const header = `[PASSAGE ${idx + 1}] Category: ${meta.passageType.toUpperCase()} #${meta.passageNumber} | Title: "${meta.passageTitle}" | Translator: ${meta.translator || 'Canonical Translation'}`;
-        const arabic = meta.arabicOriginal ? `\nOriginal Arabic: ${meta.arabicOriginal}` : '';
-        const urdu = meta.urduTranslation ? `\nUrdu Translation: ${meta.urduTranslation}` : '';
-        const english = `\nEnglish Translation: ${doc.content}`;
-        const primaryTranslation = targetLanguage === 'urdu' && meta.urduTranslation ? `${urdu}\n${english}` : `${english}${urdu}`;
-        return `${header}${arabic}${primaryTranslation}\n---`;
+        
+        // Truncate raw context if full text was not explicitly requested to keep prompt responsive and fast
+        const maxLen = fullTextRequested ? 40000 : 2200;
+
+        let arabic = meta.arabicOriginal || '';
+        if (!fullTextRequested && arabic.length > 900) {
+          arabic = arabic.substring(0, 900) + '... [text continues in canonical library]';
+        }
+        const arabicPart = arabic ? `\nOriginal Arabic: ${arabic}` : '';
+
+        let english = doc.content || '';
+        if (!fullTextRequested && english.length > maxLen) {
+          english = english.substring(0, maxLen) + '... [text continues in canonical library]';
+        }
+        const englishPart = `\nEnglish Translation: ${english}`;
+
+        let urdu = meta.urduTranslation || '';
+        if (!fullTextRequested && urdu.length > maxLen) {
+          urdu = urdu.substring(0, maxLen) + '... [اردو متن کینونیکل لائبریری میں جاری ہے]';
+        }
+        const urduPart = urdu ? `\nUrdu Translation: ${urdu}` : '';
+
+        const primaryTranslation = targetLanguage === 'urdu' && urdu ? `${urduPart}\n${englishPart}` : `${englishPart}${urduPart}`;
+        return `${header}${arabicPart}${primaryTranslation}\n---`;
       })
       .join('\n\n');
   }

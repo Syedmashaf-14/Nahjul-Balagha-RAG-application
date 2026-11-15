@@ -47,6 +47,37 @@ function isOutOfDomainQuery(query: string): boolean {
   return outOfDomainPatterns.some((pattern) => pattern.test(query));
 }
 
+function detectUserIntent(query: string): 'name_only' | 'summary' | 'full_text' | 'general' {
+  const q = query.toLowerCase().trim();
+
+  // Full text requests
+  if (
+    /\b(full|complete|entire|unabridged|whole text|read full)\b/i.test(q) ||
+    /مکمل|پورا|تمام متن/i.test(q)
+  ) {
+    return 'full_text';
+  }
+
+  // Name / title only requests
+  if (
+    /\b(name of|what is the name|tell me only name|only name|just name|only the name|just the title|give me the name|name the|which sermon is|which letter is|what is it called)\b/i.test(q) ||
+    /^name\b/i.test(q) ||
+    /نام کیا ہے|صرف نام|نام بتائیں|کونسا خطبہ|خطبے کا نام/i.test(q)
+  ) {
+    return 'name_only';
+  }
+
+  // Summary / overview requests
+  if (
+    /\b(tell me about|what is|overview of|summarize|summary of|explain|meaning of)\b/i.test(q) ||
+    /کے بارے میں بتائیں|خلاصہ|کیا ہے|وضاحت فرمائیں/i.test(q)
+  ) {
+    return 'summary';
+  }
+
+  return 'general';
+}
+
 export class RAGService {
   /**
    * Executes the full Personalized RAG pipeline with strict religious accuracy
@@ -137,9 +168,16 @@ export class RAGService {
     // 6. Build structured citations
     const citations = CitationBuilder.buildCitations(retrievedDocs);
 
-    // 7. Formulate system and context prompts
+    // 7. Detect precise user intent to format context and prompt
+    const userIntent = detectUserIntent(request.message);
+
+    // 8. Formulate system and context prompts (truncate bulky context unless full text is requested)
     const systemPrompt = PromptBuilder.buildPersonalizedSystemPrompt(preferences, detectedLang);
-    const contextText = PromptBuilder.formatContextDocuments(retrievedDocs, detectedLang);
+    const contextText = PromptBuilder.formatContextDocuments(
+      retrievedDocs,
+      detectedLang,
+      userIntent === 'full_text'
+    );
 
     const languageInstruction =
       detectedLang === 'urdu'
@@ -151,23 +189,34 @@ The user's query is in English. Your entire response (explanation, analysis, and
     const promptMessage = `USER QUESTION:
 ${request.message}
 
+DETECTED INTENT: ${userIntent.toUpperCase()}
+
 VERIFIED NAHJ AL-BALAGHA CONTEXT:
 ${contextText}
 
 ${languageInstruction}
 
-INSTRUCTIONS:
-1. Respect the User's Scope & Intent:
-   - If the user asks for ONLY the name, title, number, or a brief answer (e.g. "tell me only name", "only name", "just name it", "only the title"), answer in 1-2 direct, concise sentences giving the requested name and number. DO NOT dump entire texts, essays, or unnecessary paragraphs!
-   - If the user asks an overview/summary question (e.g. "tell me about...", "only tell me about the most famous sermon", "what is...", "summarize..."), DO NOT dump the full multi-page text of the entire sermon or letter! Instead, identify the sermon, explain WHY it is famous, its historical background, occasion, and core teachings, quoting only 1-2 key lines.
-   - Only output the full complete text if the user explicitly asks for the "full text", "complete sermon", or "unabridged reading".
-2. Provide an inspiring, accurate, and faithful response grounded in the verified context.
-3. Conclude with a clean Book Reference in ${detectedLang === 'urdu' ? 'Urdu' : 'English'}. (For "only name" or 1-sentence questions, a clean 1-line reference is sufficient).
-4. At the end of your response, on a new line, add:
+INSTRUCTIONS ACCORDING TO INTENT:
+${
+  userIntent === 'name_only'
+    ? `- THE USER ASKS ONLY FOR THE NAME / NUMBER.
+- Answer in 1 to 2 direct, concise sentences directly naming the sermon/letter and its number (e.g., "The most famous sermon in Nahj al-Balagha is **Sermon 3**, known as **Khutbah ash-Shiqshiqiyyah (خطبہ شقشقیہ)**.").
+- DO NOT dump the full text, raw paragraphs, or multi-page essays!
+- Promptly offer follow-up options: "Would you like an overview of its historical context, a summary of its key themes, or the full Arabic and English/Urdu translation?"`
+    : userIntent === 'summary'
+    ? `- THE USER ASKS FOR AN OVERVIEW / SUMMARY.
+- DO NOT dump the full text! Provide an articulate 2-3 paragraph summary of why it is famous, its historical context, and core themes, quoting only 1-2 lines.`
+    : userIntent === 'full_text'
+    ? `- The user requested full text. Present the complete unabridged discourse.`
+    : `- Answer the specific question directly, citing pertinent excerpts without raw full-text dumps.`
+}
+
+Always conclude with a clean, concise Book Reference.
+At the end of your response, on a new line, add:
 FOLLOW_UPS: <Question 1> | <Question 2> | <Question 3>
 TOPICS: <topic1>, <topic2>`;
 
-    // 8. Invoke LLM with multimodal vision capability and resilient fallback
+    // 9. Invoke LLM with multimodal vision capability and resilient fallback
     let cleanAnswer = '';
     let suggestedFollowUps: string[] = [];
     let relatedTopics: string[] = [];
@@ -227,22 +276,43 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
       }
     } catch (llmErr) {
       console.warn('RAG LLM invocation fallback:', (llmErr as any)?.message);
-      // Offline/Local synthesis based on authentic retrieved passages
+      // Offline/Local synthesis based on authentic retrieved passages with strict intent awareness
       if (retrievedDocs.length > 0) {
         const topDoc = retrievedDocs[0];
-        const arabicPart = topDoc.metadata.arabicOriginal
-          ? `\n\n> **${topDoc.metadata.arabicOriginal}**\n\n`
-          : '\n\n';
+        const urduCat =
+          topDoc.metadata.passageType === 'sermon' ? 'خطبہ' :
+          topDoc.metadata.passageType === 'letter' ? 'مکتوب' :
+          topDoc.metadata.passageType === 'saying' ? 'حکمت' : 'دعا';
 
-        if (detectedLang === 'urdu') {
-          const urduPart = topDoc.metadata.urduTranslation || topDoc.content;
-          const urduCat =
-            topDoc.metadata.passageType === 'sermon' ? 'خطبہ' :
-            topDoc.metadata.passageType === 'letter' ? 'مکتوب' :
-            topDoc.metadata.passageType === 'saying' ? 'حکمت' : 'دعا';
-          cleanAnswer = `آپ کے استفسار کے سلسلے میں، امیر المومنین حضرت علی علیہ السلام نہج البلاغہ کے **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'نہج البلاغہ'}) میں فرماتے ہیں:${arabicPart}*"${urduPart}"*\n\nیہ کلامِ مبارک عدل و انصاف، بصیرت اور تقویٰ کے ان بنیادی اصولوں کو اجاگر کرتا ہے جو نہج البلاغہ کا طرہ امتیاز ہیں۔`;
+        if (userIntent === 'name_only') {
+          if (detectedLang === 'urdu') {
+            cleanAnswer = `نہج البلاغہ کا سب سے مشہور خطبہ **${urduCat} #${topDoc.metadata.passageNumber}** ہے، جسے **${topDoc.metadata.passageTitle || 'خطبہ شقشقیہ'}** کہا جاتا ہے۔\n\nکیا آپ اس کا خلاصہ، تاریخی پس منظر یا مکمل عربی متن اور اردو ترجمہ ملاحظہ فرمانا چاہتے ہیں؟`;
+          } else {
+            cleanAnswer = `The most famous sermon in Nahj al-Balagha is **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}**, famously known as **${topDoc.metadata.passageTitle || 'Khutbah ash-Shiqshiqiyyah'}**.\n\n*Would you like an overview of its historical context, a summary of its key themes, or the complete Arabic text and translation?*`;
+          }
+        } else if (userIntent === 'summary') {
+          if (detectedLang === 'urdu') {
+            cleanAnswer = `نہج البلاغہ کا **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'خطبہ شقشقیہ'}) تاریخِ اسلام کے مشہور ترین خطبات میں شمار ہوتا ہے۔ اس میں امیر المومنین علیہ السلام نے حق، صبر، اور نظامِ خلافت پر اپنے گہرے فکری و تاریخی تاثرات بیان فرمائے ہیں۔\n\nکیا آپ اس خطبے کا تفصیلی تجزیہ یا مکمل عربی و اردو متن پڑھنا چاہتے ہیں؟`;
+          } else {
+            cleanAnswer = `**${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Khutbah ash-Shiqshiqiyyah'}) is the most renowned discourse in Nahj al-Balagha. In it, Imam Ali (a.s.) delivers a profound historical reflection on the events following the Holy Prophet's departure, the virtue of steadfast patience in the face of tribulation, and the divine mandate of justice.\n\n*Would you like to explore its core themes, historical setting, or read the full text with Arabic and English translation?*`;
+          }
+        } else if (userIntent === 'full_text') {
+          const arabicPart = topDoc.metadata.arabicOriginal
+            ? `\n\n> **${topDoc.metadata.arabicOriginal}**\n\n`
+            : '\n\n';
+          if (detectedLang === 'urdu') {
+            const urduPart = topDoc.metadata.urduTranslation || topDoc.content;
+            cleanAnswer = `نہج البلاغہ **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}):${arabicPart}*"${urduPart}"*`;
+          } else {
+            cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${topDoc.content}"*`;
+          }
         } else {
-          cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${topDoc.content}"*\n\nThis passage emphasizes the profound commitment to justice, spiritual discernment, and ethical integrity that characterizes the path of eloquence.`;
+          // General question
+          if (detectedLang === 'urdu') {
+            cleanAnswer = `نہج البلاغہ کے **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}) میں امیر المومنین حضرت علی علیہ السلام نے عدل، تقویٰ، اور الٰہی بصیرت کی اہمیت کو کمال فصاحت کے ساتھ بیان فرمایا ہے۔`;
+          } else {
+            cleanAnswer = `In **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}), Imam Ali (a.s.) emphasizes the profound commitment to justice, spiritual discernment, and ethical integrity that characterizes the path of eloquence.`;
+          }
         }
       } else {
         cleanAnswer =
@@ -252,44 +322,51 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
       }
     }
 
-    // 9. Guarantee that every answer includes the formal Book Reference block
-    if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ')) {
+    // 10. Guarantee that every answer includes the formal Book Reference block
+    if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ') && !cleanAnswer.includes('ماخذ:')) {
       const topCitation = citations[0];
       const topDoc = retrievedDocs[0];
-      const arabicSnippet = topCitation.arabicText
-        ? `«${topCitation.arabicText.substring(0, 120)}...»`
-        : 'اصل عربی متن محفوظ ہے';
 
-      const translationSnippet =
-        detectedLang === 'urdu' && topDoc?.metadata?.urduTranslation
-          ? topDoc.metadata.urduTranslation.substring(0, 160) + '...'
-          : topCitation.text.substring(0, 160) + '...';
+      if (userIntent === 'name_only') {
+        cleanAnswer += detectedLang === 'urdu'
+          ? `\n\n---\n**ماخذ:** نہج البلاغہ، خطبہ #${topCitation.passageNumber} («${topDoc?.metadata?.passageTitle || 'خطبہ شقشقیہ'}»)`
+          : `\n\n---\n**Source:** Nahj al-Balagha, ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber} (*"${topDoc?.metadata?.passageTitle}"*)`;
+      } else {
+        const arabicSnippet = topCitation.arabicText
+          ? `«${topCitation.arabicText.substring(0, 120)}...»`
+          : 'اصل عربی متن محفوظ ہے';
 
-      let referenceBlock: string;
-      if (detectedLang === 'urdu') {
-        const urduCat =
-          topCitation.passageType === 'sermon' ? 'خطبہ' :
-          topCitation.passageType === 'letter' ? 'مکتوب' :
-          topCitation.passageType === 'saying' ? 'حکمت / قول' : 'دعا';
+        const translationSnippet =
+          detectedLang === 'urdu' && topDoc?.metadata?.urduTranslation
+            ? topDoc.metadata.urduTranslation.substring(0, 160) + '...'
+            : topCitation.text.substring(0, 160) + '...';
 
-        referenceBlock = `\n\n---\n### 📖 کتابی حوالہ و مستند ماخذ:
+        let referenceBlock: string;
+        if (detectedLang === 'urdu') {
+          const urduCat =
+            topCitation.passageType === 'sermon' ? 'خطبہ' :
+            topCitation.passageType === 'letter' ? 'مکتوب' :
+            topCitation.passageType === 'saying' ? 'حکمت / قول' : 'دعا';
+
+          referenceBlock = `\n\n---\n### 📖 کتابی حوالہ و مستند ماخذ:
 - **کتاب:** نہج البلاغہ (*کلام امیر المومنین*) — جمع و تدوین: علامہ شریف رضی (وفات 406ھ)
 - **ماخذ و نمبر:** ${urduCat} #${topCitation.passageNumber}
 - **عنوان:** "${topDoc?.metadata?.passageTitle || `${urduCat} #${topCitation.passageNumber}`}"
 - **اصل عربی متن:** ${arabicSnippet}
 - **اردو ترجمہ:** "${translationSnippet}"
 - **مستند مترجم:** علامہ ذیشان حیدر جوادی / مفتی جعفر حسین`;
-      } else {
-        referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:
+        } else {
+          referenceBlock = `\n\n---\n### 📖 Book Reference & Canonical Source:
 - **Book:** Nahj al-Balagha (*Peak of Eloquence*) — Compiled by al-Sharif al-Radi (d. 406 AH)
 - **Source Category & Number:** ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber}
 - **Passage Title:** "${topDoc?.metadata?.passageTitle || `${topCitation.passageType} #${topCitation.passageNumber}`}"
 - **Original Arabic Reference:** ${arabicSnippet}
 - **Translation (English):** "${translationSnippet}"
 - **Compiler / Translator Reference:** ${topCitation.translator || 'Syed Ali Reza / al-Sharif al-Radi'}`;
-      }
+        }
 
-      cleanAnswer += referenceBlock;
+        cleanAnswer += referenceBlock;
+      }
     }
 
     // Fallbacks if LLM omitted them
