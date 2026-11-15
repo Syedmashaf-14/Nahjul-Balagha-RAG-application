@@ -157,9 +157,12 @@ ${contextText}
 ${languageInstruction}
 
 INSTRUCTIONS:
-Provide an inspiring, accurate, and faithful response. If context is insufficient, explicitly state so.
-Always conclude your response with the formal Book Reference block in ${detectedLang === 'urdu' ? 'Urdu' : 'English'}.
-At the end of your response, on a new line, add:
+1. Respect the User's Scope & Intent:
+   - If the user asks an overview/summary question (e.g. "tell me about...", "only tell me about the most famous sermon", "what is...", "summarize..."), DO NOT dump the full multi-page text of the entire sermon or letter! Instead, identify the sermon, explain WHY it is famous, its historical background, occasion, and core teachings, quoting only 1-2 key lines.
+   - Only output the full complete text if the user explicitly asks for the "full text", "complete sermon", or "unabridged reading".
+2. Provide an inspiring, accurate, and faithful response grounded in the verified context.
+3. Always conclude your response with the formal Book Reference block in ${detectedLang === 'urdu' ? 'Urdu' : 'English'}.
+4. At the end of your response, on a new line, add:
 FOLLOW_UPS: <Question 1> | <Question 2> | <Question 3>
 TOPICS: <topic1>, <topic2>`;
 
