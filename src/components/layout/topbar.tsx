@@ -182,55 +182,73 @@ export function Topbar() {
               )}
             </button>
 
-            {/* Notifications Dropdown Panel */}
+            {/* Notifications Dropdown / Mobile Floating Modal */}
             {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white border border-[#ECE7DE] rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DE]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#18231C] uppercase tracking-wider">
-                      {isUrdu ? 'اطلاعات' : 'Notifications'}
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#EBF3EE] text-[#143E2E]">
-                        {unreadCount} {isUrdu ? 'نئی' : 'New'}
-                      </span>
-                    )}
-                  </div>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllNotificationsRead}
-                      className="text-[11px] text-[#143E2E] font-medium hover:underline"
-                    >
-                      {isUrdu ? 'سب پڑھ لی گئیں' : 'Mark all read'}
-                    </button>
-                  )}
-                </div>
+              <>
+                {/* Mobile Backdrop Overlay */}
+                <div
+                  className="fixed inset-0 bg-[#18231C]/30 backdrop-blur-2xs z-40 sm:hidden"
+                  onClick={() => setNotificationsOpen(false)}
+                />
 
-                <div className="divide-y divide-[#ECE7DE]/60 max-h-80 overflow-y-auto mt-1">
-                  {notifications.map((n) => (
-                    <Link
-                      key={n.id}
-                      href={n.link}
-                      onClick={() => setNotificationsOpen(false)}
-                      className={`block py-3 px-2 rounded-xl hover:bg-[#FBF9F5] transition-colors ${
-                        !n.read ? 'bg-[#FDFBF7]' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-[#18231C] leading-snug">
-                          {n.title}
+                <div className="fixed inset-x-3 top-16 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-88 max-w-[calc(100vw-24px)] bg-white border border-[#ECE7DE] rounded-2xl shadow-2xl sm:shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DE]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#18231C] uppercase tracking-wider">
+                        {isUrdu ? 'اطلاعات' : 'Notifications'}
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#EBF3EE] text-[#143E2E]">
+                          {unreadCount} {isUrdu ? 'نئی' : 'New'}
                         </span>
-                        <span className="text-[10px] text-[#8E877D] shrink-0 font-mono">
-                          {n.time}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#58635B] mt-1 leading-relaxed line-clamp-2">
-                        {n.description}
-                      </p>
-                    </Link>
-                  ))}
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllNotificationsRead}
+                          className="text-[11px] text-[#143E2E] font-medium hover:underline cursor-pointer"
+                        >
+                          {isUrdu ? 'سب پڑھ لی گئیں' : 'Mark all read'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setNotificationsOpen(false)}
+                        className="p-1 rounded-lg text-[#8E877D] hover:text-[#18231C] sm:hidden cursor-pointer"
+                        aria-label="Close"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-[#ECE7DE]/60 max-h-[60vh] sm:max-h-80 overflow-y-auto mt-1">
+                    {notifications.map((n) => (
+                      <Link
+                        key={n.id}
+                        href={n.link}
+                        onClick={() => setNotificationsOpen(false)}
+                        className={`block py-3 px-2 rounded-xl hover:bg-[#FBF9F5] transition-colors ${
+                          !n.read ? 'bg-[#FDFBF7]' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-bold text-[#18231C] leading-snug">
+                            {n.title}
+                          </span>
+                          <span className="text-[10px] text-[#8E877D] shrink-0 font-mono">
+                            {n.time}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#58635B] mt-1 leading-relaxed line-clamp-2">
+                          {n.description}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -249,7 +267,7 @@ export function Topbar() {
 
             {/* Language Dropdown Menu */}
             {languageMenuOpen && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-[#ECE7DE] rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 mt-2 w-48 sm:w-52 max-w-[calc(100vw-24px)] bg-white border border-[#ECE7DE] rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8E877D] border-b border-[#ECE7DE]/70 mb-1">
                   Language Preference
                 </div>
