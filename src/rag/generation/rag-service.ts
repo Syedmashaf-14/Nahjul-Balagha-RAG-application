@@ -3,12 +3,14 @@ import { userPreferencesRepository } from '../../db/repositories/user-preference
 import { readingHistoryRepository } from '../../db/repositories/reading-history.repository';
 import { queryRewriter } from '../query/query-rewriter';
 import { knowledgeRetriever } from '../retrieval/retriever';
+import { HybridSearchEngine } from '../retrieval/hybrid-search';
 import { CitationBuilder } from '../postprocessing/citation-builder';
 import { PromptBuilder } from './prompt-builder';
 import { LanguageDetector } from '../../ingestion/processors/language-detector';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { RAGResponse, ChatRequest } from '../../types/conversation.types';
 import { UserPreferences, UserPreferencesSchema } from '../../types/user.types';
+import { RetrievedDocument } from '../../types/passage.types';
 
 function isOutOfDomainQuery(query: string): boolean {
   const lower = query.toLowerCase();
@@ -45,6 +47,61 @@ function isOutOfDomainQuery(query: string): boolean {
   ];
 
   return outOfDomainPatterns.some((pattern) => pattern.test(query));
+}
+
+function cleanPassageText(text: string, maxLength: number = 400): string {
+  if (!text) return '';
+  const cleaned = text
+    .replace(/Please visit[\s\S]*/i, '')
+    .replace(/www\.[^\s]+/g, '')
+    .replace(/https?:\/\/[^\s]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  return cleaned.substring(0, maxLength) + '...';
+}
+
+function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): string {
+  const pType = doc.metadata.passageType;
+  const pNum = doc.metadata.passageNumber;
+
+  // Specific canonical high-profile discourses
+  if (pType === 'letter' && pNum === 31) {
+    return lang === 'urdu'
+      ? `نہج البلاغہ کا **مکتوب نمبر ۳۱** (*امام حسن مجتبیٰ علیہ السلام کے نام وصیت و اخلاقی منشور*) اخلاق، تربیت اور روحانی بصیرت کا عظیم ترین شاہکار ہے۔ امیر المومنین علیہ السلام نے جنگ صفین سے واپسی پر مقام حاضرین میں یہ وصیت نامہ تحریر فرمایا۔\n\nاس کلام میں آپ نے تقویٰ الٰہی، دنیا کی بے ثباتی، خود احتسابی، نیک اخلاق کی ترویج، حقوق العباد کی پاسداری، اور آخرت کے لیے زادِ راہ جمع کرنے کی جامع اور اثر انگیز ہدایات عطا فرمائی ہیں۔`
+      : `**Letter 31** (*A Father's Advice and Moral Testament to Imam al-Hasan*) is one of the most celebrated ethical and spiritual discourses in Nahj al-Balagha. Written at al-Hadirayn upon returning from the Battle of Siffin, Imam Ali (a.s.) imparts comprehensive guidance to his son on cultivating noble character, constant awareness of Allah (Taqwa), the transience and deceptions of worldly attachments, preparation for the Hereafter, and enduring hardship with steadfast patience.`;
+  }
+
+  if (pType === 'letter' && pNum === 53) {
+    return lang === 'urdu'
+      ? `نہج البلاغہ کا **مکتوب نمبر ۵۳** (*مالک اشتر کے نام تاریخی عہد نامہ*) عدل و انصاف، مثالی حکمرانی، عوامی حقوق، اور رعایا بالخصوص کمزور طبقات کی نگہداشت کا تاریخی اور جامع ترین دستور ہے۔`
+      : `**Letter 53** (*Imam Ali's Covenant to Malik al-Ashtar*) is the preeminent Islamic treatise on justice, public administration, judicial impartiality, taxation with equity, and safeguarding the rights of the poor and oppressed.`;
+  }
+
+  if (pType === 'sermon' && pNum === 3) {
+    return lang === 'urdu'
+      ? `نہج البلاغہ کا **خطبہ نمبر ۳** (*خطبہ شقشقیہ*) تاریخ اسلام کے اہم ترین خطبات میں سے ہے، جس میں امیر المومنین علیہ السلام نے خلافت کے ابتدائی مراحل، اپنے تاریخی صبر، اور بالآخر عوامی اصرار پر منصبِ خلافت قبول کرنے کے حالات بیان فرمائے ہیں۔`
+      : `**Sermon 3** (*Khutbah ash-Shiqshiqiyyah*) is one of the most renowned historical discourses in Nahj al-Balagha, articulating Imam Ali's (a.s.) reflections on the early caliphate, his steadfast patience, and his assumption of governance upon popular demand.`;
+  }
+
+  if (pType === 'sermon' && pNum === 193) {
+    return lang === 'urdu'
+      ? `نہج البلاغہ کا **خطبہ ۱۹۳** (*خطبہ متقین / خطبہ ہمام*) متقین اور پرہیزگاروں کے اوصاف میں عدیم المثال خطبہ ہے، جس میں امیر المومنین علیہ السلام نے اپنے صحابی ہمام کی درخواست پر اہل تقویٰ کے شب و روز، عبادات اور اخلاقی کمالات کو بیان فرمایا ہے۔`
+      : `**Sermon 193** (*Khutbah al-Muttaqeen / Hammam*) is the famous sermon delineating the profound spiritual, moral, and social virtues of the truly pious (Muttaqeen) delivered at the request of his companion Hammam.`;
+  }
+
+  // Dynamic summary for all other discourses
+  const title = doc.metadata.passageTitle || `${pType} #${pNum}`;
+  const topics = doc.metadata.topics?.length ? doc.metadata.topics.join(', ') : 'wisdom, ethics, and virtue';
+  const excerpt = cleanPassageText(doc.content, 260);
+
+  if (lang === 'urdu') {
+    const urduCat = pType === 'sermon' ? 'خطبہ' : pType === 'letter' ? 'مکتوب' : pType === 'saying' ? 'حکمت' : 'دعا';
+    const urduExcerpt = cleanPassageText(doc.metadata.urduTranslation || doc.content, 260);
+    return `نہج البلاغہ کے **${urduCat} #${pNum}** (*«${title}»*) میں امیر المومنین علیہ السلام نے اسلامی تعلیمات اور حکمت کے بنیادی اصول بیان فرمائے ہیں۔\n\nاس کلام کا کلیدی پیغام:\n> *«${urduExcerpt}»*`;
+  }
+
+  return `In **${pType.toUpperCase()} #${pNum}** (*"${title}"*), Imam Ali (a.s.) imparts timeless guidance focusing on **${topics}**.\n\nCore passage teaching:\n> *"${excerpt}"*`;
 }
 
 function detectUserIntent(query: string): 'name_only' | 'summary' | 'full_text' | 'general' {
@@ -153,15 +210,22 @@ export class RAGService {
     );
 
     // 5. Retrieve candidate documents using Hybrid Search (Dense Vector + BM25 Lexical + Entity Resolution)
+    const explicitPassage =
+      request.passageRef ||
+      HybridSearchEngine.extractExplicitPassage(request.message) ||
+      (searchReadyQuery ? HybridSearchEngine.extractExplicitPassage(searchReadyQuery) : null);
+
+    const retrievalFilters = explicitPassage
+      ? {
+          passageType: (explicitPassage as any).type || (explicitPassage as any).passageType,
+          passageNumber: (explicitPassage as any).number !== undefined ? (explicitPassage as any).number : (explicitPassage as any).passageNumber,
+        }
+      : undefined;
+
     const retrievedDocs = await knowledgeRetriever.retrieve(
       request.message,
       6,
-      request.passageRef
-        ? {
-            passageType: request.passageRef.type,
-            passageNumber: request.passageRef.number,
-          }
-        : undefined,
+      retrievalFilters,
       searchReadyQuery
     );
 
@@ -286,15 +350,20 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
 
         if (userIntent === 'name_only') {
           if (detectedLang === 'urdu') {
-            cleanAnswer = `نہج البلاغہ کا سب سے مشہور خطبہ **${urduCat} #${topDoc.metadata.passageNumber}** ہے، جسے **${topDoc.metadata.passageTitle || 'خطبہ شقشقیہ'}** کہا جاتا ہے۔\n\nکیا آپ اس کا خلاصہ، تاریخی پس منظر یا مکمل عربی متن اور اردو ترجمہ ملاحظہ فرمانا چاہتے ہیں؟`;
+            cleanAnswer = `نہج البلاغہ میں آپ کا مطلوبہ کلام **${urduCat} #${topDoc.metadata.passageNumber}** ہے، جس کا عنوان **«${topDoc.metadata.passageTitle || ''}»** ہے۔\n\nکیا آپ اس کا خلاصہ، تاریخی پس منظر یا مکمل عربی متن اور اردو ترجمہ ملاحظہ فرمانا چاہتے ہیں؟`;
           } else {
-            cleanAnswer = `The most famous sermon in Nahj al-Balagha is **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}**, famously known as **${topDoc.metadata.passageTitle || 'Khutbah ash-Shiqshiqiyyah'}**.\n\n*Would you like an overview of its historical context, a summary of its key themes, or the complete Arabic text and translation?*`;
+            cleanAnswer = `The discourse you inquired about in Nahj al-Balagha is **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}**: **${topDoc.metadata.passageTitle || ''}**.\n\n*Would you like an overview of its historical context, a summary of its key themes, or the complete Arabic text and translation?*`;
           }
         } else if (userIntent === 'summary') {
+          const discourseOverview = getDiscourseSummary(topDoc, detectedLang);
+          const arabicSnippet = topDoc.metadata.arabicOriginal
+            ? `\n\n> **«${cleanPassageText(topDoc.metadata.arabicOriginal, 220)}»**`
+            : '';
+
           if (detectedLang === 'urdu') {
-            cleanAnswer = `نہج البلاغہ کا **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'خطبہ شقشقیہ'}) تاریخِ اسلام کے مشہور ترین خطبات میں شمار ہوتا ہے۔ اس میں امیر المومنین علیہ السلام نے حق، صبر، اور نظامِ خلافت پر اپنے گہرے فکری و تاریخی تاثرات بیان فرمائے ہیں۔\n\nکیا آپ اس خطبے کا تفصیلی تجزیہ یا مکمل عربی و اردو متن پڑھنا چاہتے ہیں؟`;
+            cleanAnswer = `${discourseOverview}${arabicSnippet}\n\nکیا آپ اس کلام کا تفصیلی تجزیہ یا مکمل عربی و اردو متن پڑھنا چاہتے ہیں؟`;
           } else {
-            cleanAnswer = `**${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Khutbah ash-Shiqshiqiyyah'}) is the most renowned discourse in Nahj al-Balagha. In it, Imam Ali (a.s.) delivers a profound historical reflection on the events following the Holy Prophet's departure, the virtue of steadfast patience in the face of tribulation, and the divine mandate of justice.\n\n*Would you like to explore its core themes, historical setting, or read the full text with Arabic and English translation?*`;
+            cleanAnswer = `${discourseOverview}${arabicSnippet}\n\n*Would you like to explore its core themes, historical setting, or read the full text with Arabic and English translation?*`;
           }
         } else if (userIntent === 'full_text') {
           const arabicPart = topDoc.metadata.arabicOriginal
@@ -302,17 +371,14 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
             : '\n\n';
           if (detectedLang === 'urdu') {
             const urduPart = topDoc.metadata.urduTranslation || topDoc.content;
-            cleanAnswer = `نہج البلاغہ **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}):${arabicPart}*"${urduPart}"*`;
+            cleanAnswer = `نہج البلاغہ **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}):${arabicPart}*"${cleanPassageText(urduPart, 2500)}"*`;
           } else {
-            cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${topDoc.content}"*`;
+            cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${cleanPassageText(topDoc.content, 2500)}"*`;
           }
         } else {
           // General question
-          if (detectedLang === 'urdu') {
-            cleanAnswer = `نہج البلاغہ کے **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}) میں امیر المومنین حضرت علی علیہ السلام نے عدل، تقویٰ، اور الٰہی بصیرت کی اہمیت کو کمال فصاحت کے ساتھ بیان فرمایا ہے۔`;
-          } else {
-            cleanAnswer = `In **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}), Imam Ali (a.s.) emphasizes the profound commitment to justice, spiritual discernment, and ethical integrity that characterizes the path of eloquence.`;
-          }
+          const discourseOverview = getDiscourseSummary(topDoc, detectedLang);
+          cleanAnswer = discourseOverview;
         }
       } else {
         cleanAnswer =
@@ -328,8 +394,13 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
       const topDoc = retrievedDocs[0];
 
       if (userIntent === 'name_only') {
+        const urduCat =
+          topCitation.passageType === 'sermon' ? 'خطبہ' :
+          topCitation.passageType === 'letter' ? 'مکتوب' :
+          topCitation.passageType === 'saying' ? 'حکمت' : 'دعا';
+
         cleanAnswer += detectedLang === 'urdu'
-          ? `\n\n---\n**ماخذ:** نہج البلاغہ، خطبہ #${topCitation.passageNumber} («${topDoc?.metadata?.passageTitle || 'خطبہ شقشقیہ'}»)`
+          ? `\n\n---\n**ماخذ:** نہج البلاغہ، ${urduCat} #${topCitation.passageNumber} («${topDoc?.metadata?.passageTitle || ''}»)`
           : `\n\n---\n**Source:** Nahj al-Balagha, ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber} (*"${topDoc?.metadata?.passageTitle}"*)`;
       } else {
         const arabicSnippet = topCitation.arabicText

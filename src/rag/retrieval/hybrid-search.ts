@@ -177,7 +177,42 @@ export class HybridSearchEngine {
   private static allPassages: any[] = canonicalPassagesJson as any[];
 
   /**
-   * Performs high-precision lexical and entity search across the entire 792 canonical corpus.
+   * Extracts an explicitly referenced passage type and number from any English or Urdu query.
+   * e.g. "tell me about letter no 31" -> { type: 'letter', number: 31 }
+   * e.g. "خطبہ نمبر 193" -> { type: 'sermon', number: 193 }
+   */
+  public static extractExplicitPassage(query: string): { type: PassageType; number: number } | null {
+    const q = query.toLowerCase().trim();
+
+    // 1. English patterns: letter 31, letter no 31, sermon #3, saying 81, dua 1
+    const enMatch = q.match(/\b(letter|sermon|khutbah?|saying|maxim|aphorism|dua|supplication)\s*(?:no\.?|#|number)?\s*(\d+)\b/i);
+    if (enMatch) {
+      const rawType = enMatch[1].toLowerCase();
+      const type: PassageType =
+        rawType.startsWith('letter') ? 'letter' :
+        rawType.startsWith('sermon') || rawType.startsWith('khutba') ? 'sermon' :
+        rawType.startsWith('dua') || rawType.startsWith('supplication') ? 'dua' : 'saying';
+      return { type, number: parseInt(enMatch[2], 10) };
+    }
+
+    // 2. Urdu patterns: خطبہ نمبر 3, مکتوب 31, خط 53, حکمت 81, دعا 1
+    const urduMatch = q.match(/(خطبہ|خطبے|مکتوب|خط|حکمت|قول|دعا)\s*(?:نمبر|نمبر؟)?\s*(\d+)/i) ||
+                      q.match(/(\d+)\s*(?:واں|ویں)?\s*(خطبہ|مکتوب|خط|حکمت|قول|دعا)/i);
+    if (urduMatch) {
+      const term = urduMatch[1] || urduMatch[2];
+      const num = urduMatch[2] && !isNaN(parseInt(urduMatch[2])) ? urduMatch[2] : urduMatch[1];
+      const type: PassageType =
+        (term === 'مکتوب' || term === 'خط') ? 'letter' :
+        (term === 'خطبہ' || term === 'خطبے') ? 'sermon' :
+        (term === 'دعا') ? 'dua' : 'saying';
+      return { type, number: parseInt(num, 10) };
+    }
+
+    return null;
+  }
+
+  /**
+   * Performs high-precision lexical and entity search across the entire 799 canonical corpus.
    */
   public static searchLexical(
     query: string,
@@ -187,8 +222,13 @@ export class HybridSearchEngine {
     const rawLower = query.toLowerCase().trim();
     if (!rawLower) return [];
 
-    // 1. Detect Category Intent from query keywords
-    let requestedType: PassageType | undefined = filters?.passageType;
+    // Extract explicit passage if query mentions specific numbers
+    const explicitPassage = this.extractExplicitPassage(query);
+
+    let requestedType: PassageType | undefined = filters?.passageType || explicitPassage?.type;
+    let requestedNumber: number | undefined = filters?.passageNumber !== undefined ? filters.passageNumber : explicitPassage?.number;
+
+    // 1. Detect Category Intent from query keywords if still undefined
     if (!requestedType) {
       if (/\bletter\b|\bletters\b|خط\b|مکتوب\b|مکتوبات\b/.test(rawLower)) {
         requestedType = 'letter';
@@ -201,8 +241,7 @@ export class HybridSearchEngine {
       }
     }
 
-    // 2. Extract Specific Number if mentioned (e.g. "letter 6", "sermon 193", "قول 81")
-    let requestedNumber: number | undefined = filters?.passageNumber;
+    // 2. Extract Specific Number if mentioned and not yet resolved
     if (requestedNumber === undefined) {
       const numMatch = rawLower.match(/(?:letter|sermon|saying|khutba|خط|مکتوب|حکمت)\s*(?:#|no\.?|number)?\s*(\d+)/i) ||
                        rawLower.match(/(\d+)\s*(?:نمبر|خط|خطبہ|حکمت)/i);
@@ -235,10 +274,10 @@ export class HybridSearchEngine {
       const pType = (p.chapter || 'saying').toLowerCase() as PassageType;
       const pNum = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
 
-      // If user specified an exact number and type, prioritize directly
+      // If user specified an exact number and type, guarantee absolute top score
       if (requestedNumber !== undefined && pNum === requestedNumber) {
         if (!requestedType || pType === requestedType) {
-          scoredPassages.push({ passage: p, score: 100.0 });
+          scoredPassages.push({ passage: p, score: 1000.0 });
           continue;
         }
       }

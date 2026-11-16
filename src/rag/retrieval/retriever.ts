@@ -22,16 +22,23 @@ export class KnowledgeRetriever {
   ): Promise<RetrievedDocument[]> {
     const vectorStore = getVectorStore();
 
-    // 1. High-Precision Lexical & Entity Search across all 792 canonical passages
+    // Check for explicit passage reference in query (e.g. "letter 31", "sermon 193", "حکمت 81")
+    const explicit = HybridSearchEngine.extractExplicitPassage(queryText) ||
+      (secondaryQuery ? HybridSearchEngine.extractExplicitPassage(secondaryQuery) : null);
+
+    const effectiveType = filters?.passageType || explicit?.type;
+    const effectiveNumber = filters?.passageNumber !== undefined ? filters.passageNumber : explicit?.number;
+
+    // 1. High-Precision Lexical & Entity Search across all canonical passages
     const primaryLexical = HybridSearchEngine.searchLexical(queryText, limit * 2, {
-      passageType: filters?.passageType,
-      passageNumber: filters?.passageNumber,
+      passageType: effectiveType,
+      passageNumber: effectiveNumber,
     });
 
     const secondaryLexical = secondaryQuery && secondaryQuery !== queryText
       ? HybridSearchEngine.searchLexical(secondaryQuery, limit, {
-          passageType: filters?.passageType,
-          passageNumber: filters?.passageNumber,
+          passageType: effectiveType,
+          passageNumber: effectiveNumber,
         })
       : [];
 
@@ -46,8 +53,8 @@ export class KnowledgeRetriever {
     let vectorDocs: RetrievedDocument[] = [];
     try {
       const vectorFilter: Record<string, any> = {};
-      if (filters?.passageType) vectorFilter.passageType = filters.passageType;
-      if (filters?.passageNumber !== undefined) vectorFilter.passageNumber = filters.passageNumber;
+      if (effectiveType) vectorFilter.passageType = effectiveType;
+      if (effectiveNumber !== undefined) vectorFilter.passageNumber = effectiveNumber;
 
       vectorDocs = await vectorStore.similaritySearchByText(
         queryText,
@@ -62,17 +69,28 @@ export class KnowledgeRetriever {
     const docMap = new Map<string, { doc: RetrievedDocument; rrfScore: number }>();
     const k = 60; // Standard RRF smoothing constant
 
-    // Process lexical results (weight 1.5 for exact historical entities and terms)
+    // Process lexical results
     lexicalDocs.forEach((doc, rank) => {
       const key = `${doc.metadata.passageType}_${doc.metadata.passageNumber}`;
-      const rrf = 1.5 / (k + rank + 1);
+      const isExactMatch =
+        effectiveNumber !== undefined &&
+        doc.metadata.passageNumber === effectiveNumber &&
+        (!effectiveType || doc.metadata.passageType === effectiveType);
+
+      // Exact passage request receives unassailable top score
+      const rrf = isExactMatch ? 1000.0 : (1.5 / (k + rank + 1));
       docMap.set(key, { doc, rrfScore: rrf });
     });
 
     // Process vector results
     vectorDocs.forEach((doc, rank) => {
       const key = `${doc.metadata.passageType}_${doc.metadata.passageNumber}`;
-      const rrf = 1.0 / (k + rank + 1);
+      const isExactMatch =
+        effectiveNumber !== undefined &&
+        doc.metadata.passageNumber === effectiveNumber &&
+        (!effectiveType || doc.metadata.passageType === effectiveType);
+
+      const rrf = isExactMatch ? 1000.0 : (1.0 / (k + rank + 1));
       if (docMap.has(key)) {
         const existing = docMap.get(key)!;
         existing.rrfScore += rrf;
@@ -91,7 +109,7 @@ export class KnowledgeRetriever {
       .sort((a, b) => b.rrfScore - a.rrfScore)
       .map((entry) => ({
         ...entry.doc,
-        score: Math.min(1.0, entry.rrfScore * 30),
+        score: entry.rrfScore >= 1000.0 ? 1.0 : Math.min(1.0, entry.rrfScore * 30),
       }));
 
     return merged.slice(0, limit);
