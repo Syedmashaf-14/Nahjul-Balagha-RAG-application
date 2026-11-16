@@ -90,6 +90,12 @@ function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): 
       : `**Sermon 193** (*Khutbah al-Muttaqeen / Hammam*) is the famous sermon delineating the profound spiritual, moral, and social virtues of the truly pious (Muttaqeen) delivered at the request of his companion Hammam.`;
   }
 
+  if (pType === 'letter' && pNum === 8) {
+    return lang === 'urdu'
+      ? `نہج البلاغہ کا **مکتوب نمبر ۸** امیر المومنین علیہ السلام کا اپنے قاصد **جرير بن عبد الله البجلی** کے نام وہ دو ٹوک اور حتمی مکتوب ہے جب آپ نے انہیں شام میں معاویہ کے پاس بیعت کا پیغام دے کر بھیجا تھا۔\n\nاس مکتوب میں آپ نے جریر کو حکم دیا کہ معاویہ سے فوری اور قطعی جواب طلب کریں اور اسے دو ٹوک فیصلہ کرنے پر مجبور کریں: یا بیعت کر کے اطاعت قبول کرے یا پھر جنگ کے لیے تیار ہو جائے۔`
+      : `**Letter 8** is Imam Ali's (a.s.) decisive mandate to his envoy **Jarir ibn Abdillah al-Bajali** while in Damascus awaiting Mu'awiyah's response to the Caliphate.\n\nIn this letter, Imam Ali (a.s.) instructs Jarir to deliver an unequivocal ultimatum to Mu'awiyah: compel him to make an immediate, definitive choice between peaceful submission through sworn allegiance to the legitimate Caliphate, or facing total war.`;
+  }
+
   // Dynamic summary for all other discourses
   const title = doc.metadata.passageTitle || `${pType} #${pNum}`;
   const topics = doc.metadata.topics?.length ? doc.metadata.topics.join(', ') : 'wisdom, ethics, and virtue';
@@ -107,10 +113,10 @@ function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): 
 function detectUserIntent(query: string): 'name_only' | 'summary' | 'full_text' | 'general' {
   const q = query.toLowerCase().trim();
 
-  // Full text requests
+  // Full text / Content requests
   if (
-    /\b(full|complete|entire|unabridged|whole text|read full)\b/i.test(q) ||
-    /مکمل|پورا|تمام متن/i.test(q)
+    /\b(full|complete|entire|unabridged|whole text|read full|content|text of|what was the content|show me the content|what is the content|what was written|read the letter|read the sermon)\b/i.test(q) ||
+    /مکمل|پورا|تمام متن|متن|کیا لکھا ہے/i.test(q)
   ) {
     return 'full_text';
   }
@@ -126,7 +132,7 @@ function detectUserIntent(query: string): 'name_only' | 'summary' | 'full_text' 
 
   // Summary / overview requests
   if (
-    /\b(tell me about|what is|overview of|summarize|summary of|explain|meaning of)\b/i.test(q) ||
+    /\b(tell me about|what is|what was|overview of|summarize|summary of|explain|meaning of)\b/i.test(q) ||
     /کے بارے میں بتائیں|خلاصہ|کیا ہے|وضاحت فرمائیں/i.test(q)
   ) {
     return 'summary';
@@ -212,7 +218,7 @@ export class RAGService {
     // 5. Retrieve candidate documents using Hybrid Search (Dense Vector + BM25 Lexical + Entity Resolution)
     const explicitPassage =
       request.passageRef ||
-      HybridSearchEngine.extractExplicitPassage(request.message) ||
+      HybridSearchEngine.resolveContextualPassage(request.message, conversationHistorySummary) ||
       (searchReadyQuery ? HybridSearchEngine.extractExplicitPassage(searchReadyQuery) : null);
 
     const retrievalFilters = explicitPassage
@@ -366,14 +372,24 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
             cleanAnswer = `${discourseOverview}${arabicSnippet}\n\n*Would you like to explore its core themes, historical setting, or read the full text with Arabic and English translation?*`;
           }
         } else if (userIntent === 'full_text') {
-          const arabicPart = topDoc.metadata.arabicOriginal
-            ? `\n\n> **${topDoc.metadata.arabicOriginal}**\n\n`
-            : '\n\n';
+          const arabicText = topDoc.metadata.arabicOriginal ? cleanPassageText(topDoc.metadata.arabicOriginal, 3000) : '';
+          const englishText = cleanPassageText(topDoc.content, 3000);
+          const urduText = topDoc.metadata.urduTranslation ? cleanPassageText(topDoc.metadata.urduTranslation, 3000) : '';
+
           if (detectedLang === 'urdu') {
-            const urduPart = topDoc.metadata.urduTranslation || topDoc.content;
-            cleanAnswer = `نہج البلاغہ **${urduCat} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle}):${arabicPart}*"${cleanPassageText(urduPart, 2500)}"*`;
+            cleanAnswer = `### نہج البلاغہ — ${urduCat} نمبر ${topDoc.metadata.passageNumber} کا متن:
+*«${topDoc.metadata.passageTitle}»*
+
+${arabicText ? `> **«${arabicText}»**\n\n` : ''}**اردو ترجمہ:**
+«${urduText || englishText}»`;
           } else {
-            cleanAnswer = `Regarding your inquiry, Imam Ali states in **${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}** (${topDoc.metadata.passageTitle || 'Nahj al-Balagha'}):${arabicPart}*"${cleanPassageText(topDoc.content, 2500)}"*`;
+            cleanAnswer = `### Nahj al-Balagha — Content of ${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}:
+*${topDoc.metadata.passageTitle}*
+
+${arabicText ? `> **«${arabicText}»**\n\n` : ''}**Translation (English):**
+"${englishText}"
+
+${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
           }
         } else {
           // General question

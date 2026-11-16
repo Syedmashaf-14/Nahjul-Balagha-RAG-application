@@ -212,6 +212,51 @@ export class HybridSearchEngine {
   }
 
   /**
+   * Resolves an explicitly requested passage or, if the user query is a follow-up or
+   * pronoun inquiry (e.g. "what was the content of letter", "explain it"), resolves the
+   * active passage from sliding conversation history.
+   */
+  public static resolveContextualPassage(
+    query: string,
+    historySummary?: string | null
+  ): { type: PassageType; number: number } | null {
+    // 1. Direct explicit in current query
+    const direct = this.extractExplicitPassage(query);
+    if (direct) return direct;
+
+    if (!historySummary) return null;
+
+    // 2. Follow-up intent detection
+    const isFollowUp =
+      /\b(content|meaning|translation|text|read|explain|tell me|more|about|context|full|urdu|arabic|detail|it|this|that|letter|sermon|saying|dua)\b/i.test(query) ||
+      /وضاحت|مطلب|ترجمہ|تفصیل|خلاصہ|اس|یہ|خط|خطبہ|مکتوب|کلام/i.test(query);
+
+    if (!isFollowUp) return null;
+
+    // 3. Scan sliding history backwards from most recent message
+    const lines = historySummary.split('\n').reverse();
+    for (const line of lines) {
+      const found = this.extractExplicitPassage(line);
+      if (found) {
+        // Enforce category filter if current message narrowed it
+        const wantsLetter = /\bletter\b|خط\b|مکتوب\b/i.test(query);
+        const wantsSermon = /\bsermon\b|خطبہ\b/i.test(query);
+        const wantsDua = /\bdua\b|دعا\b/i.test(query);
+        const wantsSaying = /\bsaying\b|حکمت\b/i.test(query);
+
+        if (wantsLetter && found.type !== 'letter') continue;
+        if (wantsSermon && found.type !== 'sermon') continue;
+        if (wantsDua && found.type !== 'dua') continue;
+        if (wantsSaying && found.type !== 'saying') continue;
+
+        return found;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Performs high-precision lexical and entity search across the entire 799 canonical corpus.
    */
   public static searchLexical(

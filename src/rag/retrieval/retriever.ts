@@ -22,8 +22,9 @@ export class KnowledgeRetriever {
   ): Promise<RetrievedDocument[]> {
     const vectorStore = getVectorStore();
 
-    // Check for explicit passage reference in query (e.g. "letter 31", "sermon 193", "حکمت 81")
-    const explicit = HybridSearchEngine.extractExplicitPassage(queryText) ||
+    // Check for explicit passage reference in query or conversation history
+    const explicit =
+      HybridSearchEngine.resolveContextualPassage(queryText, secondaryQuery) ||
       (secondaryQuery ? HybridSearchEngine.extractExplicitPassage(secondaryQuery) : null);
 
     const effectiveType = filters?.passageType || explicit?.type;

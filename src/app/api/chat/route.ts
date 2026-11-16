@@ -57,7 +57,11 @@ export async function POST(req: NextRequest) {
       // Fetch conversation summary or recent messages to provide sliding conversational memory
       const recentMessages = await conversationRepository.getMessages(conversationId, userId, 6);
       conversationSummary = recentMessages
-        .map((m) => `${m.role.toUpperCase()}: ${m.content.substring(0, 200)}`)
+        .map((m) => {
+          const cit = (m as any).citations?.[0];
+          const citRef = cit ? ` [REFERENCED: ${cit.passageType?.toUpperCase()} #${cit.passageNumber}]` : '';
+          return `${m.role.toUpperCase()}: ${m.content.substring(0, 300)}${citRef}`;
+        })
         .join('\n');
     } catch (dbErr) {
       console.warn('MongoDB conversation persistence skipped (offline/connecting):', (dbErr as any)?.message);
