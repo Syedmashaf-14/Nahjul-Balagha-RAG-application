@@ -1,4 +1,4 @@
-import { getDefaultLLM } from '../../config/llm';
+import { getDefaultLLM, createLLM } from '../../config/llm';
 import { userPreferencesRepository } from '../../db/repositories/user-preferences.repository';
 import { readingHistoryRepository } from '../../db/repositories/reading-history.repository';
 import { queryRewriter } from '../query/query-rewriter';
@@ -100,6 +100,63 @@ function checkGreetingOrCourtesy(query: string): { type: 'greeting' | 'gratitude
   }
 
   return { type: null };
+}
+
+function checkCorpusMetaQuestion(
+  query: string
+): 'letters_count' | 'sermons_count' | 'sayings_count' | 'corpus_breakdown' | 'compiler_info' | null {
+  const q = query.toLowerCase().trim();
+
+  // Letters count (English & Urdu)
+  if (
+    /how many (letters|letter|maktub|maktoob|maktubat)\b/i.test(q) ||
+    /number of (letters|letter|maktub|maktoob|maktubat)\b/i.test(q) ||
+    /total (letters|letter|maktub|maktoob|maktubat)\b/i.test(q) ||
+    /(کتنے|کتنا)\s*(مکتوب|مکتوبات|خطوط|خط)/.test(q)
+  ) {
+    return 'letters_count';
+  }
+
+  // Sermons count (English & Urdu)
+  if (
+    /how many (sermons|sermon|khutba|khutbah|khutbat)\b/i.test(q) ||
+    /number of (sermons|sermon|khutba|khutbah|khutbat)\b/i.test(q) ||
+    /total (sermons|sermon|khutba|khutbah|khutbat)\b/i.test(q) ||
+    /(کتنے|کتنا)\s*(خطبے|خطبات|خطبہ)/.test(q)
+  ) {
+    return 'sermons_count';
+  }
+
+  // Sayings count (English & Urdu)
+  if (
+    /how many (sayings|saying|hikam|hikmah|aphorisms|quotes|maxims)\b/i.test(q) ||
+    /number of (sayings|saying|hikam|hikmah|aphorisms|quotes|maxims)\b/i.test(q) ||
+    /total (sayings|saying|hikam|hikmah|aphorisms|quotes|maxims)\b/i.test(q) ||
+    /(کتنی|کتنے)\s*(حکمتیں|حکمت|اقوال|قول)/.test(q)
+  ) {
+    return 'sayings_count';
+  }
+
+  // Total corpus breakdown
+  if (
+    /how many (discourses|parts|sections|passages|total)\b/i.test(q) ||
+    /total (discourses|parts|sections|passages|chapters|contents)\b/i.test(q) ||
+    /نہج البلاغہ میں کل (کتنے|کتنی)/.test(q) ||
+    /کتنے ابواب/.test(q)
+  ) {
+    return 'corpus_breakdown';
+  }
+
+  // Compiler / Author
+  if (
+    /who (compiled|wrote|authored|assembled|collected) nahj/i.test(q) ||
+    /compiler of nahj/i.test(q) ||
+    /نہج البلاغہ کس نے (مرتب|لکھی|جمع)/.test(q)
+  ) {
+    return 'compiler_info';
+  }
+
+  return null;
 }
 
 function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): string {
@@ -278,6 +335,127 @@ Reflecting upon the profound eloquence and teachings of Ameer al-Momineen Imam A
                 'What is the most famous sermon in Nahj al-Balagha?',
                 'Explain Letter 53 on governance and justice',
                 'What does Imam Ali say about patience and character?',
+              ],
+          confidenceLevel: 'high',
+          disclaimer: null,
+        };
+      }
+    }
+
+    // 2.5. Corpus Structure & Statistical Questions (Immediate canonical accuracy)
+    if (!request.image) {
+      const metaType = checkCorpusMetaQuestion(request.message);
+      if (metaType) {
+        const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(request.message);
+        let metaAnswer = '';
+
+        if (metaType === 'letters_count') {
+          metaAnswer = isUrdu
+            ? `شریف الرضی رحمۃ اللہ علیہ کی مرتب کردہ نہج البلاغہ میں امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے کل **۷۹ مکتوبات (خطوط و فرامین)** شامل ہیں۔
+
+ان مکتوبات میں مختلف گورنروں، عمال، اور امرا کے نام تاریخی فرامین، جنگی ہدایات، عدل و انصاف کے احکامات، اور اخلاقی وصایا شامل ہیں۔ ان میں **خط نمبر ۵۳** (مالک اشتر کے نام تاریخی عہد نامہ) اور **خط نمبر ۳۱** (امام حسن مجتبیٰ علیہ السلام کے نام وصیت نامہ) سب سے زیادہ شہرت کے حامل ہیں۔
+
+### 📖 نہج البلاغہ کی کلامی تقسیم (کل ۷۹۹ فرمودات):
+- **۲۴۱ خطبات** (خطبہ ۱ تا ۲۴۱)
+- **۷۹ مکتوبات** (مکتوب ۱ تا ۷۹)
+- **۴۸۹ حکمتیں و اقوال** (حکمت ۱ تا ۴۸۹)
+
+کیا آپ کسی مخصوص مکتوب (جیسے خط نمبر ۵۳ یا خط نمبر ۳۱) کا خلاصہ یا متن ملاحظہ فرمانا چاہتے ہیں؟`
+            : `In Nahj al-Balagha (*Peak of Eloquence*), compiled by al-Sharif al-Radi (d. 406 AH), there are canonically **79 Letters (Maktubat)** written by Ameer al-Momineen Imam Ali ibn Abi Talib (a.s.).
+
+These letters comprise official decrees, covenants of governance (such as the renowned Letter 53 to Malik al-Ashtar), moral testaments (such as Letter 31 to his son Imam al-Hasan), diplomatic correspondence (e.g. to Mu'awiyah), and instructions to tax collectors and governors across the Islamic realm.
+
+### 📖 Structure of Nahj al-Balagha (799 Total Discourses):
+- **241 Sermons (Khutbat)** — Sermons 1 to 241
+- **79 Letters (Maktubat)** — Letters 1 to 79
+- **489 Sayings (Hikam)** — Sayings 1 to 489
+
+*Would you like an overview or analysis of a specific letter, such as Letter 53 on governance or Letter 31 on ethical character?*`;
+        } else if (metaType === 'sermons_count') {
+          metaAnswer = isUrdu
+            ? `نہج البلاغہ میں امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے کل **۲۴۱ خطبات** شامل ہیں۔
+
+ان خطبات میں توحید و معرفتِ الٰہی، کائنات کی خلقت، متقین کے اوصاف (جیسے خطبہ ۱۹۳ / خطبہ ہمام)، اور تاریخی حقائق (جیسے خطبہ ۳ / خطبہ شقشقیہ) پر مشتمل عدیم المثال کلام موجود ہے۔
+
+### 📖 نہج البلاغہ کے کل ابواب (۷۹۹ فرمودات):
+- **۲۴۱ خطبات**
+- **۷۹ مکتوبات**
+- **۴۸۹ حکمتیں**
+
+کیا آپ کسی مشہور خطبے (جیسے خطبہ ۳ یا خطبہ ۱۹۳) کا جائزہ لینا چاہتے ہیں؟`
+            : `In Nahj al-Balagha, there are canonically **241 Sermons (Khutbat)** delivered by Ameer al-Momineen Imam Ali ibn Abi Talib (a.s.).
+
+These include sublime discourses on divine theology (Tawhid), the creation of the heavens and earth, virtues of the pious (such as Sermon 193 / Khutbah al-Muttaqeen), historical reflections (such as Sermon 3 / Khutbah ash-Shiqshiqiyyah), and moral guidance.
+
+### 📖 Complete Canonical Structure (799 Total Discourses):
+- **241 Sermons (Khutbat)**
+- **79 Letters (Maktubat)**
+- **489 Sayings (Hikam)**
+
+*Would you like to explore a famous sermon, such as Sermon 3 (ash-Shiqshiqiyyah) or Sermon 193 (on the pious)?*`;
+        } else if (metaType === 'sayings_count') {
+          metaAnswer = isUrdu
+            ? `نہج البلاغہ میں امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کی کل **۴۸۹ حکمتیں (قصار الحکم و مختصر اقوال)** شامل ہیں۔
+
+یہ کلماتِ حکمت عقل، علم، صبر، خودداری، دوستی اور اخلاقی تربیت کے بے مثال موتی ہیں۔
+
+### 📖 نہج البلاغہ کے کل ابواب (۷۹۹ فرمودات):
+- **۲۴۱ خطبات**
+- **۷۹ مکتوبات**
+- **۴۸۹ حکمتیں**
+
+کیا آپ کسی مخصوص حکمت (جیسے حکمت ۱۴۷ برائے علم یا حکمت ۸۱) کی تشریح ملاحظہ فرمانا چاہتے ہیں؟`
+            : `In Nahj al-Balagha, there are canonically **489 Sayings (Hikam / Short Maxims)** of Ameer al-Momineen Imam Ali ibn Abi Talib (a.s.).
+
+These concise, memorable aphorisms encapsulate timeless wisdom on the intellect, human character, patience (Sabr), wealth, friendship, and spiritual fortitude.
+
+### 📖 Complete Canonical Structure (799 Total Discourses):
+- **241 Sermons (Khutbat)**
+- **79 Letters (Maktubat)**
+- **489 Sayings (Hikam)**
+
+*Would you like to examine a famous maxim, such as Saying 147 on knowledge or Saying 81 on human worth?*`;
+        } else if (metaType === 'compiler_info' || metaType === 'corpus_breakdown') {
+          metaAnswer = isUrdu
+            ? `نہج البلاغہ کو عظیم اسلامی عالم، فقیہ اور ادیب **شریف الرضی** (سید رضی - الشريف الرضي، وفات ۴۰۶ھ) نے بغداد میں **سن ۴۰۰ ہجری** میں امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے فرمودات میں سے منتخب فرما کر مرتب کیا۔
+
+یہ کتاب تین بنیادی ابواب اور کل **۷۹۹ کلامی فرمودات** پر مشتمل ہے:
+۱. **۲۴۱ خطبات** (خطبہ ۱ تا ۲۴۱)
+۲. **۷۹ مکتوبات (خطوط)** (مکتوب ۱ تا ۷۹)
+۳. **۴۸۹ حکمتیں (قصار الحکم)** (حکمت ۱ تا ۴۸۹)
+
+آج آپ نہج البلاغہ کے کس باب یا کلام مبارک کا مطالعہ فرمانا چاہتے ہیں؟`
+            : `Nahj al-Balagha (*The Peak of Eloquence*) was compiled in Baghdad in **400 AH (1000 CE)** by the eminent Islamic scholar, jurist, and poet **al-Sharif al-Radi (Sayyid Razi - الشريف الرضي)**, who passed away in 406 AH.
+
+He selected the most eloquent and profound words of Ameer al-Momineen Imam Ali ibn Abi Talib (a.s.) and arranged them into three canonical sections comprising **799 total discourses**:
+1. **241 Sermons (Khutbat)**
+2. **79 Letters (Maktubat)**
+3. **489 Sayings & Maxims (Hikam)**
+
+Which section or discourse would you like to explore today?`;
+        }
+
+        return {
+          answer: metaAnswer,
+          citations: [],
+          relatedTopics: [
+            '79 Letters of Imam Ali',
+            '241 Sermons of Nahj al-Balagha',
+            '489 Sayings & Maxims',
+            'Al-Sharif al-Radi (Compiler)',
+          ],
+          suggestedFollowUps: isUrdu
+            ? [
+                'مالک اشتر کے نام خط نمبر 53 کے بنیادی اصول کیا ہیں؟',
+                'امام حسن علیہ السلام کے نام خط نمبر 31 کا خلاصہ فرمائیں',
+                'خطبہ نمبر 3 (خطبہ شقشقیہ) کا تاریخی پس منظر کیا ہے؟',
+                'حکمت نمبر 147 میں علم کی کیا فضیلت بیان ہوئی ہے؟',
+              ]
+            : [
+                'Explain the core advice in Letter 53 to Malik al-Ashtar',
+                'Summarize Letter 31: Advice and Moral Testament to Imam al-Hasan',
+                'What is the historical context of Sermon 3 (ash-Shiqshiqiyyah)?',
+                'What does Imam Ali say about knowledge in Saying 147?',
               ],
           confidenceLevel: 'high',
           disclaimer: null,
@@ -471,8 +649,26 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
       }
     } catch (llmErr) {
       console.warn('RAG LLM invocation fallback:', (llmErr as any)?.message);
-      // Offline/Local synthesis based on authentic retrieved passages with strict intent awareness
-      if (retrievedDocs.length > 0) {
+
+      let retrySucceeded = false;
+      try {
+        const fallbackLlm = createLLM({ maxTokens: 400, temperature: 0.2 });
+        const retryRes = await fallbackLlm.invoke([
+          new SystemMessage(systemPrompt),
+          new HumanMessage(request.message),
+        ]);
+        const retryText = retryRes.content?.toString().trim();
+        if (retryText && retryText.length > 25) {
+          cleanAnswer = retryText;
+          retrySucceeded = true;
+        }
+      } catch (retryErr) {
+        console.warn('Fallback LLM retry also failed:', (retryErr as any)?.message);
+      }
+
+      if (!retrySucceeded) {
+        // Offline/Local synthesis based on authentic retrieved passages with strict intent awareness
+        if (retrievedDocs.length > 0) {
         const topDoc = retrievedDocs[0];
         const urduCat =
           topDoc.metadata.passageType === 'sermon' ? 'خطبہ' :
@@ -528,6 +724,7 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
             : `I have consulted the corpus of Nahj al-Balagha. To preserve strict religious integrity and avoid fabrication, I acknowledge that the specific reference directly answering this is not in the active knowledge base.`;
       }
     }
+  }
 
     // 10. Guarantee that every answer includes the formal Book Reference block
     if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ') && !cleanAnswer.includes('ماخذ:')) {

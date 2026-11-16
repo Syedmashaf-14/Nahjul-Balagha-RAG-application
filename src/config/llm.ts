@@ -24,7 +24,7 @@ const defaultConfig: LLMConfig = {
       : 'openai'),
   model: defaultModel,
   temperature: 0.3,
-  maxTokens: 4096,
+  maxTokens: 1000,
 };
 
 export function createLLM(config: Partial<LLMConfig> = {}): BaseChatModel {
