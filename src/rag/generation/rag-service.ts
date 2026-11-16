@@ -64,6 +64,44 @@ function cleanPassageText(text: string, maxLength: number = 400): string {
   return cleaned.substring(0, maxLength) + '...';
 }
 
+function checkGreetingOrCourtesy(query: string): { type: 'greeting' | 'gratitude' | null } {
+  if (!query) return { type: null };
+  const trimmed = query.trim();
+  if (trimmed.length === 0) return { type: null };
+
+  const clean = trimmed
+    .toLowerCase()
+    .replace(/[-\u2010-\u2015]/g, ' ')
+    .replace(/[.,\/#!$%\^&\*;:{}=_`~()؟?!\n\r]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Pattern for pure greeting + optional pleasantries like "bro", "bhai", "dear", "how are you"
+  const pureGreetingRegex = /^(as\s+salamu|as\s+salam|asslamu|assalamu|as-salamu|assalam|aslam|salam|salaam|slam|slm|saalam)\s*(o\s*|u\s*)?(alaikum|alaykum|alikum|alekum|alykum)?(\s+(bro|brother|bhai|sir|dear|janab|sahab|ji))?(\s+(how are you|kaise ho|kya haal hai|kese ho))?$/i;
+
+  const englishGreetingRegex = /^(hello|hi|hey|hey\s+there|good\s*(morning|afternoon|evening|day))(\s+(bro|brother|bhai|sir|dear))?(\s+(how are you))?$/i;
+
+  const urduGreetingRegex = /^(السلام\s*علیکم|سلام\s*علیکم|وعلیکم\s*السلام|سلام|آداب)(\s*(ورحمۃ\s*اللہ(\s*وبرکاتہ)?)?)?(\s*(بھائی|جناب|محترم|صاحب|دوست))?(\s*(کیسے\s*ہیں|کیا\s*حال\s*ہے))?$/;
+
+  if (
+    pureGreetingRegex.test(clean) ||
+    englishGreetingRegex.test(clean) ||
+    urduGreetingRegex.test(clean)
+  ) {
+    return { type: 'greeting' };
+  }
+
+  // Pure gratitude regex
+  const gratitudeRegex = /^(thank\s*you|thanks|thank\s*u|jazakallah|jazak\s*allah|jazakallahu\s*khair|jazakallah\s*khair|shukriya)(\s+(so\s*much|a\s*lot|brother|bro|bhai|janab|sahab))?$/i;
+  const urduGratitudeRegex = /^(شکریہ|بہت\s*شکریہ|جزاک\s*اللہ(\s*خیرا)?|نوازش|مہربانی)(\s*(بھائی|جناب|صاحب))?$/;
+
+  if (gratitudeRegex.test(clean) || urduGratitudeRegex.test(clean)) {
+    return { type: 'gratitude' };
+  }
+
+  return { type: null };
+}
+
 function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): string {
   const pType = doc.metadata.passageType;
   const pNum = doc.metadata.passageNumber;
@@ -163,7 +201,91 @@ export class RAGService {
         : undefined;
     const detectedLang = LanguageDetector.detect(request.message, userPrefLanguage);
 
-    // 2. Strict Domain Guardrail Check (bypassed if user is asking about an uploaded image)
+    // 2. Greeting & Courtesy Handling (Immediate graceful reply without searching or dumping sermons)
+    if (!request.image) {
+      const greetingCheck = checkGreetingOrCourtesy(request.message);
+      if (greetingCheck.type === 'greeting') {
+        const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(request.message);
+        const greetingResponse = isUrdu
+          ? `وعلیکم السلام و رحمۃ اللہ و برکاتہ!
+
+خوش آمدید! میں نہج البلاغہ اور امیر المومنین حضرت علی ابن ابی طالب علیہ السلام کے فرمودات، خطبات، مکتوبات اور حکمتوں پر مبنی آپ کا رفیق ہوں۔
+
+آپ مجھ سے نہج البلاغہ کے کسی بھی خطبے (جیسے خطبہ شقشقیہ یا خطبہ متقین)، مکتوب (جیسے خط نمبر 53 بنام مالک اشتر یا خط نمبر 31 بنام امام حسنؑ)، یا اخلاقی و روحانی حکمتوں اور دعاؤں کے متعلق استفسار فرما سکتے ہیں۔
+
+آج آپ کس کلامِ مبارک یا موضوع پر رہنمائی حاصل کرنا چاہتے ہیں؟`
+          : `Wa Alaikum Assalam wa Rahmatullah wa Barakatuh (وعلیکم السلام و رحمۃ اللہ و برکاتہ).
+
+Welcome! Peace and blessings be upon you. I am your dedicated knowledge companion for Nahj al-Balagha and the eternal teachings and wisdom of Ameer al-Momineen Imam Ali ibn Abi Talib (a.s.).
+
+You may ask me about any canonical discourse in Nahj al-Balagha—such as his celebrated letters on governance and justice (e.g. Letter 53 to Malik al-Ashtar, Letter 31 to Imam al-Hasan), profound sermons on theology and virtue (e.g. Sermon 3 or Sermon 193), or his maxims on human character and ethics.
+
+How may I assist your contemplation or study today?`;
+
+        return {
+          answer: greetingResponse,
+          citations: [],
+          relatedTopics: [
+            'Letter 53 (Governance)',
+            'Sermon 3 (ash-Shiqshiqiyyah)',
+            'Saying 147 (Knowledge)',
+            'Letter 31 (Moral Advice)',
+          ],
+          suggestedFollowUps: isUrdu
+            ? [
+                'مالک اشتر کے نام خط نمبر 53 کے بنیادی اصول کیا ہیں؟',
+                'خطبہ نمبر 3 (خطبہ شقشقیہ) کا تاریخی پس منظر کیا ہے؟',
+                'حکمت نمبر 147 میں علم اور مال کا موازنہ کیسے فرمایا گیا ہے؟',
+                'امام حسن علیہ السلام کے نام خط نمبر 31 کا خلاصہ فرمائیں',
+              ]
+            : [
+                'Explain the core advice in Letter 53 to Malik al-Ashtar',
+                'What is the historical context of Sermon 3 (Khutbah ash-Shiqshiqiyyah)?',
+                'What does Imam Ali say about knowledge in Saying 147?',
+                'Summarize Letter 31: Advice and Moral Testament to Imam al-Hasan',
+              ],
+          confidenceLevel: 'high',
+          disclaimer: null,
+        };
+      }
+
+      if (greetingCheck.type === 'gratitude') {
+        const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(request.message);
+        const gratitudeResponse = isUrdu
+          ? `آپ کا بہت شکریہ اور جزاکم اللہ خیراً و أحسن الجزاء!
+
+امیر المومنین حضرت علی علیہ السلام کے فرمودات اور نہج البلاغہ کی لازوال حکمتوں سے استفادہ کرنا ہم سب کے لیے خیر و برکت اور روحانی بصیرت کا ذریعہ ہے۔ اگر آپ کا کوئی اور سوال ہو یا کسی خطبے، مکتوب یا حکمت کی مزید وضاحت درکار ہو، تو میں حاضر ہوں۔`
+          : `You are most welcome, and may Allah bless you with continuous wisdom and virtue (Jazakum Allahu Khayran).
+
+Reflecting upon the profound eloquence and teachings of Ameer al-Momineen Imam Ali (a.s.) in Nahj al-Balagha is a rewarding spiritual journey. Please let me know whenever you would like to explore any other sermon, letter, or saying!`;
+
+        return {
+          answer: gratitudeResponse,
+          citations: [],
+          relatedTopics: [
+            'Letter 53 on Governance',
+            'Saying 81 on Human Worth',
+            'Sermon 193 (Pious Virtues)',
+            'Supplications of Imam Ali',
+          ],
+          suggestedFollowUps: isUrdu
+            ? [
+                'نہج البلاغہ کا سب سے مشہور خطبہ کون سا ہے؟',
+                'خط نمبر 53 کے اہم نکات کیا ہیں؟',
+                'حکمت نمبر 81 کی وضاحت فرمائیں',
+              ]
+            : [
+                'What is the most famous sermon in Nahj al-Balagha?',
+                'Explain Letter 53 on governance and justice',
+                'What does Imam Ali say about patience and character?',
+              ],
+          confidenceLevel: 'high',
+          disclaimer: null,
+        };
+      }
+    }
+
+    // 3. Strict Domain Guardrail Check (bypassed if user is asking about an uploaded image)
     if (!request.image && isOutOfDomainQuery(request.message)) {
       const refusalMessage =
         detectedLang === 'urdu'
