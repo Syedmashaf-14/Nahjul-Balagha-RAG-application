@@ -20,10 +20,13 @@ import {
   Layers,
   Home,
   Sliders,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
+import { useTheme } from '@/contexts/theme-context';
 
 interface NotificationItem {
   id: string;
@@ -65,12 +68,15 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
 ];
 
+const NOTIF_STORAGE_KEY = 'nahj_notifications_v3';
+
 export function Topbar() {
   const [query, setQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const { language, setLanguage, isUrdu, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -79,6 +85,27 @@ export function Topbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+
+  // Load persistent notifications from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
+      if (saved) {
+        setNotifications(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.warn('Could not read notifications from storage:', e);
+    }
+  }, []);
+
+  const saveNotifications = (items: NotificationItem[]) => {
+    setNotifications(items);
+    try {
+      localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(items));
+    } catch (e) {
+      console.warn('Could not persist notifications:', e);
+    }
+  };
 
   const isCurrent = (href: string) => {
     if (href === '/' && pathname === '/') return true;
@@ -126,7 +153,24 @@ export function Topbar() {
   };
 
   const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    saveNotifications(notifications.map((n) => ({ ...n, read: true })));
+  };
+
+  const clearAllNotifications = () => {
+    saveNotifications([]);
+  };
+
+  const dismissNotification = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    saveNotifications(notifications.filter((n) => n.id !== id));
+  };
+
+  const markNotificationRead = (id: string) => {
+    saveNotifications(
+      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    setNotificationsOpen(false);
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -208,9 +252,17 @@ export function Topbar() {
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllNotificationsRead}
-                          className="text-[11px] text-[#143E2E] font-medium hover:underline cursor-pointer"
+                          className="text-[11px] text-[#143E2E] dark:text-[#52B788] font-medium hover:underline cursor-pointer"
                         >
                           {isUrdu ? 'سب پڑھ لی گئیں' : 'Mark all read'}
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={clearAllNotifications}
+                          className="text-[11px] text-[#8E877D] hover:text-[#D96B43] font-medium transition-colors cursor-pointer"
+                        >
+                          {isUrdu ? 'صاف کریں' : 'Clear all'}
                         </button>
                       )}
                       <button
@@ -223,34 +275,68 @@ export function Topbar() {
                     </div>
                   </div>
 
-                  <div className="divide-y divide-[#ECE7DE]/60 max-h-[60vh] sm:max-h-80 overflow-y-auto mt-1">
-                    {notifications.map((n) => (
-                      <Link
-                        key={n.id}
-                        href={n.link}
-                        onClick={() => setNotificationsOpen(false)}
-                        className={`block py-3 px-2 rounded-xl hover:bg-[#FBF9F5] transition-colors ${
-                          !n.read ? 'bg-[#FDFBF7]' : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-xs font-bold text-[#18231C] leading-snug">
-                            {n.title}
-                          </span>
-                          <span className="text-[10px] text-[#8E877D] shrink-0 font-mono">
-                            {n.time}
-                          </span>
+                  <div className="divide-y divide-[#ECE7DE]/60 dark:divide-[#28392F]/60 max-h-[60vh] sm:max-h-80 overflow-y-auto mt-1">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-[#8E877D]">
+                        {isUrdu ? 'کوئی نئی اطلاع موجود نہیں ہے' : 'No notifications'}
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`group relative flex items-start justify-between gap-2 py-3 px-2 rounded-xl hover:bg-[#FBF9F5] dark:hover:bg-[#1E2C22] transition-colors ${
+                            !n.read ? 'bg-[#FDFBF7] dark:bg-[#19261E]' : ''
+                          }`}
+                        >
+                          <Link
+                            href={n.link}
+                            onClick={() => markNotificationRead(n.id)}
+                            className="flex-1 pr-6"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-xs font-bold text-[#18231C] dark:text-[#F3EFE8] leading-snug">
+                                {n.title}
+                              </span>
+                              <span className="text-[10px] text-[#8E877D] shrink-0 font-mono">
+                                {n.time}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#58635B] dark:text-[#A7A29A] mt-1 leading-relaxed line-clamp-2">
+                              {n.description}
+                            </p>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={(e) => dismissNotification(n.id, e)}
+                            title="Dismiss"
+                            aria-label="Dismiss notification"
+                            className="opacity-0 group-hover:opacity-100 text-[#8E877D] hover:text-[#D96B43] p-1 transition-opacity cursor-pointer shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <p className="text-[11px] text-[#58635B] mt-1 leading-relaxed line-clamp-2">
-                          {n.description}
-                        </p>
-                      </Link>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </>
             )}
           </div>
+
+          {/* Theme Mode Toggle (Light / Dark) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            className="p-2 rounded-xl text-[#58635B] hover:text-[#18231C] hover:bg-[#F3EFE8] dark:hover:bg-[#1E2C22] transition-colors cursor-pointer border border-[#ECE7DE] bg-white shadow-2xs"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-[#E9C46A]" />
+            ) : (
+              <Moon className="w-4 h-4 text-[#143E2E]" />
+            )}
+          </button>
 
           {/* Language Selector Dropdown */}
           <div className="relative" ref={langRef}>
@@ -479,6 +565,26 @@ export function Topbar() {
                       <span className={isUrdu ? 'font-arabic text-xs' : ''}>{t('personalization')}</span>
                     </div>
                   </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleTheme();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-[#58635B] hover:text-[#18231C] hover:bg-[#F7F5F0] cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {theme === 'dark' ? (
+                        <Sun className="w-4 h-4 text-[#E9C46A]" />
+                      ) : (
+                        <Moon className="w-4 h-4 text-[#143E2E]" />
+                      )}
+                      <span>{theme === 'dark' ? 'Light Mode / روشن موڈ' : 'Dark Mode / ڈارک موڈ'}</span>
+                    </div>
+                    <span className="text-[10px] font-mono uppercase text-[#8E877D]">
+                      {theme}
+                    </span>
+                  </button>
                 </nav>
               </div>
             </div>

@@ -15,14 +15,17 @@ import { RetrievedDocument } from '../../types/passage.types';
 function isOutOfDomainQuery(query: string): boolean {
   const lower = query.toLowerCase();
 
-  // Sacred/domain terms that should never be blocked
+  // Sacred/domain terms that should never be blocked (English & Urdu)
   const inDomainKeywords = [
     'ali', 'imam', 'nahj', 'balagha', 'balaghah', 'sermon', 'khutbah', 'khutba',
     'letter', 'maktoob', 'saying', 'hikmah', 'wisdom', 'justice', 'malik', 'ashtar',
     'kumayl', 'hasan', 'hussain', 'islam', 'allah', 'prophet', 'governance', 'caliph',
     'sabr', 'patience', 'taqwa', 'piety', 'aqil', 'muttaqeen', 'dua', 'prayer', 'ziyad',
     'muhammad', 'quran', 'hadith', 'nahjul', 'balagah', 'ahlulbayt', 'shia', 'sunni',
-    'ghadir', 'kufa', 'siffin', 'jamal', 'nehj', 'nehjul'
+    'ghadir', 'kufa', 'siffin', 'jamal', 'nehj', 'nehjul', 'image', 'picture', 'photo',
+    'علي', 'امام', 'امیر المومنین', 'نہج', 'بلاغہ', 'خطبہ', 'مکتوب', 'خط', 'حکمت',
+    'قول', 'اقوال', 'دعا', 'مناجات', 'تصویر', 'عکس', 'کتاب', 'وصیت', 'حسن', 'حسین',
+    'تقویٰ', 'تقوی', 'عدل', 'صبر', 'مالک', 'اشتر', 'کوفہ', 'صفین', 'جمل'
   ];
   const hasInDomainKeyword = inDomainKeywords.some((kw) => lower.includes(kw));
   if (hasInDomainKeyword) return false;

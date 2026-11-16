@@ -20,6 +20,92 @@
   --arch-blue: #E2EAF0;
 }
 
+html.dark {
+  --bg-main: #0D130F;
+  --bg-card: #141C16;
+  --bg-sidebar: #111813;
+  --border-light: #222E26;
+  --border-subtle: #2C3C32;
+  --text-primary: #EDE8DE;
+  --text-secondary: #A8B5AC;
+  --text-muted: #7E8981;
+  --brand-green: #2B7A5A;
+  --brand-green-hover: #37956F;
+  --brand-green-light: #1A3125;
+  --brand-green-border: #2B4E3C;
+  --banner-green: #133829;
+  --arch-green: #173224;
+  --arch-sand: #26241D;
+  --arch-blue: #1A2733;
+}
+
+html.dark body {
+  background-color: #0D130F;
+  color: #EDE8DE;
+}
+
+/* Comprehensive Dark Mode Overrides for Tailwind Utility Classes */
+html.dark .bg-white {
+  background-color: #141C16 !important;
+}
+html.dark .bg-\[\#FBF9F5\] {
+  background-color: #0D130F !important;
+}
+html.dark .bg-\[\#FBF9F5\]\/40 {
+  background-color: rgba(13, 19, 15, 0.4) !important;
+}
+html.dark .bg-\[\#F7F5F0\] {
+  background-color: #19231C !important;
+}
+html.dark .bg-\[\#EBF3EE\] {
+  background-color: #182C21 !important;
+  color: #79D3A5 !important;
+}
+html.dark .bg-\[\#DDECE3\] {
+  background-color: #1A3728 !important;
+  color: #8DE0B6 !important;
+}
+html.dark .bg-\[\#FDF6F2\] {
+  background-color: #211A16 !important;
+}
+html.dark .border-\[\#ECE7DE\] {
+  border-color: #222E26 !important;
+}
+html.dark .border-\[\#E2DDD4\] {
+  border-color: #27362C !important;
+}
+html.dark .border-\[\#F5E6DC\] {
+  border-color: #382A22 !important;
+}
+html.dark .text-\[\#18231C\] {
+  color: #EDE8DE !important;
+}
+html.dark .text-\[\#2A231F\] {
+  color: #EDE8DE !important;
+}
+html.dark .text-\[\#58635B\] {
+  color: #A8B5AC !important;
+}
+html.dark .text-\[\#8E877D\] {
+  color: #7E8981 !important;
+}
+html.dark .text-\[\#143E2E\] {
+  color: #68C496 !important;
+}
+html.dark input, 
+html.dark textarea, 
+html.dark select {
+  background-color: #141C16 !important;
+  color: #EDE8DE !important;
+  border-color: #243229 !important;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #111813;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2B3D31;
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-primary);

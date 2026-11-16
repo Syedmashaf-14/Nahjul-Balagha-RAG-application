@@ -19,11 +19,18 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
+import { getActiveStreak } from '@/lib/streak';
+import { useState, useEffect } from 'react';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { language, isUrdu, t } = useLanguage();
+  const [streak, setStreak] = useState(() => getActiveStreak());
+
+  useEffect(() => {
+    setStreak(getActiveStreak());
+  }, []);
 
   const isCurrent = (href: string) => {
     if (href === '/' && pathname === '/') return true;
@@ -142,7 +149,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Daily Reflection Streak Card - Only show when authenticated user has actual streak */}
+      {/* Daily Reflection Streak Card */}
       {!user.isGuest && (
         <div className="p-3.5 m-3 rounded-2xl bg-[#FDF6F2] border border-[#F5E6DC]">
           <div className="flex items-center gap-2 mb-2">
@@ -151,23 +158,28 @@ export function Sidebar() {
             </div>
             <div>
               <span className="text-xs font-bold text-[#2A231F] block leading-none">
-                {t('dailyReflection')}
+                {isUrdu ? `${streak.count} روزہ تسلسل` : `${streak.count} Day Streak`}
               </span>
               <span className="text-[10px] text-[#8E877D]">{isUrdu ? 'تسلسل مطالعہ و علم' : 'Active learning journey'}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 mt-2">
-            {[1, 2, 3].map((d) => (
-              <div
-                key={d}
-                className="w-5 h-5 rounded-full bg-[#E5F2EB] flex items-center justify-center text-[#143E2E]"
-              >
-                <Check className="w-3 h-3 stroke-[3]" />
+          <div className="flex items-center justify-between gap-1 mt-2">
+            {streak.recentDays.map((day, idx) => (
+              <div key={idx} className="flex flex-col items-center gap-1">
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] transition-all ${
+                    day.completed
+                      ? 'bg-[#E5F2EB] text-[#143E2E] font-bold'
+                      : 'bg-[#ECE7DE]/80 text-[#8E877D]'
+                  }`}
+                  title={`${day.dayName}: ${day.completed ? 'Completed' : 'Pending'}`}
+                >
+                  {day.completed ? <Check className="w-3 h-3 stroke-[3]" /> : null}
+                </div>
+                <span className="text-[9px] text-[#8E877D] leading-none">{day.dayName}</span>
               </div>
             ))}
-            <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
-            <div className="w-5 h-5 rounded-full bg-[#ECE7DE]/80" />
           </div>
         </div>
       )}

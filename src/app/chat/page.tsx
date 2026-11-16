@@ -19,6 +19,7 @@ import {
   Languages,
 } from 'lucide-react';
 import { Citation } from '@/types/passage.types';
+import { recordDailyStudyActivity } from '@/lib/streak';
 
 interface Message {
   id: string;
@@ -32,32 +33,66 @@ interface Message {
   confidenceLevel?: string;
 }
 
+const STORAGE_ACTIVE_CONV = 'nahj_active_conversation_id';
+
+const INITIAL_WELCOME_MESSAGE: Message = {
+  id: 'welcome',
+  role: 'assistant',
+  content:
+    'Peace be upon you. I am your Nahj al-Balagha knowledge companion. You may ask me questions regarding Imam Ali’s sermons on theology, his letters on governance and justice, or his maxims on human character. How may I assist your contemplation today?\n\nالسلام علیکم! میں نہج البلاغہ کے علوم و حکمت پر مبنی آپ کا رفیق ہوں۔ آپ خطبات، مکتوبات، حکمتوں یا دعاؤں کے بارے میں اردو یا انگریزی میں استفسار فرما سکتے ہیں۔ آپ خطاطی یا کتابی متن کی تصویر بھی منسلک کر سکتے ہیں۔',
+  suggestedFollowUps: [
+    'Explain the core advice in Letter 53 to Malik al-Ashtar',
+    'مالک اشتر کے نام خط نمبر 53 کے بنیادی نکات کی وضاحت فرمائیں',
+    'What does Imam Ali say about knowledge in Saying 147?',
+    'حکمت نمبر 147 میں علم کی کیا فضیلت بیان ہوئی ہے؟',
+  ],
+  relatedTopics: ['Governance / حکمرانی', 'Virtue / تقویٰ', 'Knowledge / علم', 'Justice / عدل'],
+};
+
 function ChatContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        'Peace be upon you. I am your Nahj al-Balagha knowledge companion. You may ask me questions regarding Imam Ali’s sermons on theology, his letters on governance and justice, or his maxims on human character. How may I assist your contemplation today?\n\nالسلام علیکم! میں نہج البلاغہ کے علوم و حکمت پر مبنی آپ کا رفیق ہوں۔ آپ خطبات، مکتوبات، حکمتوں یا دعاؤں کے بارے میں اردو یا انگریزی میں استفسار فرما سکتے ہیں۔ آپ خطاطی یا کتابی متن کی تصویر بھی منسلک کر سکتے ہیں۔',
-      suggestedFollowUps: [
-        'Explain the core advice in Letter 53 to Malik al-Ashtar',
-        'مالک اشتر کے نام خط نمبر 53 کے بنیادی نکات کی وضاحت فرمائیں',
-        'What does Imam Ali say about knowledge in Saying 147?',
-        'حکمت نمبر 147 میں علم کی کیا فضیلت بیان ہوئی ہے؟',
-      ],
-      relatedTopics: ['Governance / حکمرانی', 'Virtue / تقویٰ', 'Knowledge / علم', 'Justice / عدل'],
-    },
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([INITIAL_WELCOME_MESSAGE]);
   const [input, setInput] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bookmarkedId, setBookmarkedId] = useState<string | null>(null);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
+
+  // Restore prior conversation session from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedConvId = localStorage.getItem(STORAGE_ACTIVE_CONV);
+    if (savedConvId && !initialQuery) {
+      setLoading(true);
+      fetch(`/api/conversations/${savedConvId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data?.messages && data.data.messages.length > 0) {
+            setConversationId(savedConvId);
+            const restored: Message[] = data.data.messages.map((m: any) => ({
+              id: m.id || Math.random().toString(),
+              role: m.role as 'user' | 'assistant',
+              content: m.content || '',
+              citations: m.citations,
+              suggestedFollowUps: m.suggestedFollowUps,
+              relatedTopics: m.relatedTopics,
+              disclaimer: m.disclaimer,
+              confidenceLevel: m.confidenceLevel,
+            }));
+            setMessages([INITIAL_WELCOME_MESSAGE, ...restored]);
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not restore previous session:', err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [initialQuery]);
 
   // Multimodal image upload state
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -152,9 +187,14 @@ function ChatContent() {
 
       const data = await res.json();
       if (data.success && data.data) {
-        if (!conversationId && data.data.conversationId) {
-          setConversationId(data.data.conversationId);
+        const activeId = conversationId || data.data.conversationId;
+        if (activeId) {
+          setConversationId(activeId);
+          try {
+            localStorage.setItem(STORAGE_ACTIVE_CONV, activeId);
+          } catch (e) {}
         }
+        recordDailyStudyActivity();
 
         setMessages((prev) => [
           ...prev,
@@ -237,13 +277,17 @@ function ChatContent() {
 
   const startNewChat = () => {
     setConversationId(null);
+    try {
+      localStorage.removeItem(STORAGE_ACTIVE_CONV);
+    } catch (e) {}
     setMessages([
       {
         id: 'welcome-new',
         role: 'assistant',
-        content: 'New exploration started. What topic or passage would you like to investigate?',
+        content: 'New exploration started. What topic or passage would you like to investigate?\n\nنیا مکالمہ شروع کر دیا گیا ہے۔ آپ نہج البلاغہ کے کس خطبے، مکتوب یا حکمت کے متعلق دریافت کرنا چاہتے ہیں؟',
         suggestedFollowUps: [
-          'What are the qualities of true leaders?',
+          'What are the qualities of true leaders in Letter 53?',
+          'مالک اشتر کے نام خط نمبر 53 کے بنیادی اصول کیا ہیں؟',
           'How to overcome anxiety and grief according to Imam Ali?',
           'What is the meaning of Saying 81?',
         ],

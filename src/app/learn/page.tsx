@@ -20,12 +20,20 @@ import {
 } from 'lucide-react';
 import { ILearningPath, ILesson, IQuizQuestion } from '@/types/learning.types';
 import { SEED_PASSAGES } from '@/ingestion/seed-data';
+import { getActiveStreak, recordDailyStudyActivity } from '@/lib/streak';
 
 export default function LearnPage() {
   const [paths, setPaths] = useState<ILearningPath[]>([]);
   const [selectedPath, setSelectedPath] = useState<ILearningPath | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [streakCount, setStreakCount] = useState(1);
+
+  useEffect(() => {
+    recordDailyStudyActivity();
+    const info = getActiveStreak();
+    setStreakCount(info.count);
+  }, []);
 
   // Lesson Reading Modal State
   const [activeLesson, setActiveLesson] = useState<{
@@ -237,7 +245,9 @@ export default function LearnPage() {
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-sm font-bold text-[#18231C]">5 days</div>
+            <div className="text-sm font-bold text-[#18231C]">
+              {streakCount} {streakCount === 1 ? 'day' : 'days'}
+            </div>
             <div className="text-xs text-[#8E877D]">current streak</div>
           </div>
         </div>
