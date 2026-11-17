@@ -728,18 +728,40 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
 
     // 10. Guarantee that every answer includes the formal Book Reference block
     if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ') && !cleanAnswer.includes('ماخذ:')) {
-      const topCitation = citations[0];
-      const topDoc = retrievedDocs[0];
+      let topCitation = citations[0];
+      let topDoc = retrievedDocs[0];
+
+      // Align citation to discourse explicitly mentioned in the response if found
+      const discourseMatch = cleanAnswer.match(/\b(sermon|letter|saying|خطبہ|مکتوب|حکمت)\s*#?\s*(\d+)\b/i);
+      if (discourseMatch) {
+        const dType = discourseMatch[1].toLowerCase();
+        const dNum = parseInt(discourseMatch[2], 10);
+        const matchIdx = retrievedDocs.findIndex(
+          (d) =>
+            d.metadata.passageNumber === dNum &&
+            (dType.includes('sermon') || dType.includes('خطبہ')
+              ? d.metadata.passageType === 'sermon'
+              : dType.includes('letter') || dType.includes('مکتوب')
+              ? d.metadata.passageType === 'letter'
+              : d.metadata.passageType === 'saying')
+        );
+        if (matchIdx !== -1) {
+          topCitation = citations[matchIdx] || topCitation;
+          topDoc = retrievedDocs[matchIdx] || topDoc;
+        }
+      }
 
       if (userIntent === 'name_only') {
-        const urduCat =
-          topCitation.passageType === 'sermon' ? 'خطبہ' :
-          topCitation.passageType === 'letter' ? 'مکتوب' :
-          topCitation.passageType === 'saying' ? 'حکمت' : 'دعا';
+        if (!discourseMatch || topCitation.passageNumber === parseInt(discourseMatch[2], 10)) {
+          const urduCat =
+            topCitation.passageType === 'sermon' ? 'خطبہ' :
+            topCitation.passageType === 'letter' ? 'مکتوب' :
+            topCitation.passageType === 'saying' ? 'حکمت' : 'دعا';
 
-        cleanAnswer += detectedLang === 'urdu'
-          ? `\n\n---\n**ماخذ:** نہج البلاغہ، ${urduCat} #${topCitation.passageNumber} («${topDoc?.metadata?.passageTitle || ''}»)`
-          : `\n\n---\n**Source:** Nahj al-Balagha, ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber} (*"${topDoc?.metadata?.passageTitle}"*)`;
+          cleanAnswer += detectedLang === 'urdu'
+            ? `\n\n---\n**ماخذ:** نہج البلاغہ، ${urduCat} #${topCitation.passageNumber} («${topDoc?.metadata?.passageTitle || ''}»)`
+            : `\n\n---\n**Source:** Nahj al-Balagha, ${topCitation.passageType.toUpperCase()} #${topCitation.passageNumber} (*"${topDoc?.metadata?.passageTitle}"*)`;
+        }
       } else {
         const arabicSnippet = topCitation.arabicText
           ? `«${topCitation.arabicText.substring(0, 120)}...»`
