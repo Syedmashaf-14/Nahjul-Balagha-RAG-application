@@ -521,8 +521,12 @@ Which section or discourse would you like to explore today?`;
     // 5. Retrieve candidate documents using Hybrid Search (Dense Vector + BM25 Lexical + Entity Resolution)
     const explicitPassage =
       request.passageRef ||
+      HybridSearchEngine.extractExplicitPassage(request.message) ||
+      HybridSearchEngine.resolveEntityPassage(request.message) ||
       HybridSearchEngine.resolveContextualPassage(request.message, conversationHistorySummary) ||
-      (searchReadyQuery ? HybridSearchEngine.extractExplicitPassage(searchReadyQuery) : null);
+      (conversationHistorySummary ? HybridSearchEngine.resolveEntityPassage(conversationHistorySummary) : null) ||
+      (searchReadyQuery ? HybridSearchEngine.extractExplicitPassage(searchReadyQuery) : null) ||
+      (searchReadyQuery ? HybridSearchEngine.resolveEntityPassage(searchReadyQuery) : null);
 
     const retrievalFilters = explicitPassage
       ? {
@@ -834,30 +838,39 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
 
     // 11. Strict Post-Generation Citation Alignment
     // Ensure the citation(s) returned in the API and displayed in the UI Sources area
-    // exactly match the discourse(s) identified in cleanAnswer!
+    // exactly match the discourse(s) identified in cleanAnswer or explicit query targeting!
     let alignedCitations = [...citations];
     const discourseRegex = /\b(sermon|letter|saying|khutba|khutbah|maktoob|hikmah|خطبہ|مکتوب|حکمت)\s*#?\s*(\d+)\b/gi;
     const matches = Array.from(cleanAnswer.matchAll(discourseRegex));
 
-    if (matches.length > 0) {
-      const referencedDiscourses: { type: PassageType; number: number }[] = [];
-      for (const m of matches) {
-        const rawType = m[1].toLowerCase();
-        const pNum = parseInt(m[2], 10);
-        const pType: PassageType =
-          rawType.includes('sermon') || rawType.includes('khutba') || rawType.includes('خطبہ')
-            ? 'sermon'
-            : rawType.includes('letter') || rawType.includes('maktoob') || rawType.includes('مکتوب')
-            ? 'letter'
-            : 'saying';
+    const referencedDiscourses: { type: PassageType; number: number }[] = [];
 
-        if (!referencedDiscourses.some((d) => d.type === pType && d.number === pNum)) {
-          referencedDiscourses.push({ type: pType, number: pNum });
-        }
+    // If an explicit or contextual discourse was resolved, place it at Rank 1
+    if (explicitPassage) {
+      const eType = (explicitPassage as any).type || (explicitPassage as any).passageType;
+      const eNum = (explicitPassage as any).number !== undefined ? (explicitPassage as any).number : (explicitPassage as any).passageNumber;
+      if (eType && eNum !== undefined) {
+        referencedDiscourses.push({ type: eType, number: eNum });
       }
+    }
 
-      if (referencedDiscourses.length > 0) {
-        const prioritizedCitations: Citation[] = [];
+    for (const m of matches) {
+      const rawType = m[1].toLowerCase();
+      const pNum = parseInt(m[2], 10);
+      const pType: PassageType =
+        rawType.includes('sermon') || rawType.includes('khutba') || rawType.includes('خطبہ')
+          ? 'sermon'
+          : rawType.includes('letter') || rawType.includes('maktoob') || rawType.includes('مکتوب')
+          ? 'letter'
+          : 'saying';
+
+      if (!referencedDiscourses.some((d) => d.type === pType && d.number === pNum)) {
+        referencedDiscourses.push({ type: pType, number: pNum });
+      }
+    }
+
+    if (referencedDiscourses.length > 0) {
+      const prioritizedCitations: Citation[] = [];
 
         for (const ref of referencedDiscourses) {
           const existing = alignedCitations.find(
@@ -896,7 +909,6 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
           alignedCitations = prioritizedCitations;
         }
       }
-    }
 
     // 12. Asynchronously record reading history for personalization tracking
     if (alignedCitations.length > 0) {

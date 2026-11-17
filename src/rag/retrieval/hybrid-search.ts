@@ -10,33 +10,128 @@ export interface EntityMatch {
 
 export const HISTORICAL_ENTITIES: EntityMatch[] = [
   {
-    entityName: 'Muawiyah / Ameer-e-Sham (Governor of Syria)',
-    passageType: 'letter',
-    passageNumbers: [6, 10, 17, 28, 32, 55, 64, 75],
-    canonicalTerms: [
-      'muawiya', 'muawiyah', 'moawiya', 'ameer e sham', 'ameer-e-sham', 'ameer sham',
-      'ammere sham', 'amir e sham', 'amir sham', 'governor of syria', 'syria', 'sham',
-      'معاویہ', 'معاوية', 'امیر شام', 'امیرِ شام', 'شام کے والی', 'اہل شام'
-    ],
-  },
-  {
-    entityName: 'Malik al-Ashtar (Governor of Egypt)',
-    passageType: 'letter',
-    passageNumbers: [53, 38],
-    canonicalTerms: [
-      'malik ashtar', 'malik al-ashtar', 'malik-e-ashtar', 'malik al ashtar',
-      'ashtar', 'governor of egypt', 'egypt', 'مالک اشتر', 'مالک الاشتر', 'مصر', 'والی مصر'
-    ],
-  },
-  {
     entityName: 'Moral Testament to Imam al-Hasan (a.s.)',
     passageType: 'letter',
     passageNumbers: [31],
     canonicalTerms: [
-      'letter to son', 'advice to son', 'hasan', 'hassan', 'imam hasan',
-      'wasiyat', 'wasiyyat', 'wasiiyat', 'wasiat', 'wasiyat to imam hasan', 'wasiiyat to imam hassan',
-      'wasiyat to son', 'advice to hasan', 'testament to hasan', 'al-hadirayn', 'hadirayn',
-      'وصیت نامہ', 'امام حسن', 'فرزند'
+      'wasiiyat to imam hassan', 'wasiyat to imam hasan', 'wasiiyat to imam hasan',
+      'wasiyat to imam hassan', 'wasiyat to son', 'wasiiyat to son', 'advice to son',
+      'advice to his son', 'advice to hasan', 'testament to hasan', 'moral testament to hasan',
+      'letter to son', 'al-hadirayn', 'hadirayn', 'letter 31', 'letter #31',
+      'امام حسن کو وصیت', 'فرزند کو وصیت', 'وصیت نامہ', 'وصیت نامہ امام حسن'
+    ],
+  },
+  {
+    entityName: 'Final Will and Testament on Deathbed (to Hasan and Husayn)',
+    passageType: 'letter',
+    passageNumbers: [47],
+    canonicalTerms: [
+      'struck by ibn muljam', 'ibn muljam', 'deathbed', 'final will', 'dying will',
+      'dying testament', 'testament to hasan and husayn', 'testament to his sons',
+      'will to hasan and husayn', 'testament after being struck', 'letter 47', 'letter #47',
+      'ابن ملجم', 'ضربت کے بعد وصیت', 'آخری وصیت', 'حسن اور حسین کو وصیت'
+    ],
+  },
+  {
+    entityName: 'Uthman ibn Hunayf (Governor of Basra / Feast of the Wealthy)',
+    passageType: 'letter',
+    passageNumbers: [45],
+    canonicalTerms: [
+      'uthman ibn hunayf', 'uthman bin hunayf', 'uthman bin hunaif', 'ibn hunayf',
+      'banquet in basra', 'wealthy banquet', 'feast of the wealthy', 'two loaves of bread',
+      'two loaves', 'simple food and garments', 'food of the servants', 'letter 45', 'letter #45',
+      'عثمان بن حنیف', 'والی بصرہ', 'دعوت بصرہ', 'امیروں کی دعوت', 'دو روٹیاں', 'دسترخوان'
+    ],
+  },
+  {
+    entityName: 'Qadi Shurayh (Purchase of House for 80 Dinars)',
+    passageType: 'letter',
+    passageNumbers: [3],
+    canonicalTerms: [
+      'shurayh', 'qadi shurayh', 'judge shurayh', 'house for 80 dinars', '80 dinars',
+      'eighty dinars', 'purchased a house for 80 dinars', 'letter 3', 'letter #3',
+      'شریح', 'قاضی شریح', 'اسی دینار', '۸۰ دینار', 'مکان خریدا'
+    ],
+  },
+  {
+    entityName: 'Letter 50 (Circular to Commanders and Marshals of the Army)',
+    passageType: 'letter',
+    passageNumbers: [50],
+    canonicalTerms: [
+      'chiefs of army', 'army commanders', 'generals of army', 'commanders of army',
+      'border guards', 'circular to the chiefs', 'chiefs of his army', 'letter 50', 'letter #50',
+      'لشکر کے سرداروں', 'سالار لشکر', 'کمانڈروں', 'امرائه على الجيوش', 'اصحاب المسالح'
+    ],
+  },
+  {
+    entityName: 'Malik al-Ashtar (Governor of Egypt / Charter of Governance)',
+    passageType: 'letter',
+    passageNumbers: [53],
+    canonicalTerms: [
+      'malik ashtar', 'malik al-ashtar', 'malik-e-ashtar', 'malik al ashtar',
+      'charter of governance', 'covenant of governance', 'governor of egypt',
+      'letter 53', 'letter #53', 'مالک اشتر', 'مالک الاشتر', 'مصر', 'والی مصر', 'عہد نامہ مالک اشتر'
+    ],
+  },
+  {
+    entityName: 'Letter to Jarir ibn Abdillah al-Bajali (Envoy to Muawiyah)',
+    passageType: 'letter',
+    passageNumbers: [8],
+    canonicalTerms: [
+      'jarir', 'jarir ibn abdullah', 'jarir al-bajali', 'bajali', 'envoy to muawiyah',
+      'letter 8', 'letter #8', 'جرير', 'جرير بن عبد الله'
+    ],
+  },
+  {
+    entityName: 'Sermon 27 (Jihad is one of the Doors of Paradise)',
+    passageType: 'sermon',
+    passageNumbers: [27],
+    canonicalTerms: [
+      'jihad is one of the doors of paradise', 'jihad is a door of paradise',
+      'doors of paradise', 'protective armour of allah', 'sermon on jihad',
+      'sermon 27', 'sermon #27', 'باب من ابواب الجنة', 'جہاد جنت کے دروازوں', 'جہاد کا خطبہ'
+    ],
+  },
+  {
+    entityName: 'Sermon 185 (Creation of the Ant, Locust, and Natural World)',
+    passageType: 'sermon',
+    passageNumbers: [185],
+    canonicalTerms: [
+      'creation of the ant', 'creation of ant', 'tiny limbs', 'gathers food',
+      'creation of locust', 'creation of peacock', 'sermon 185', 'sermon #185',
+      'خلق النملة', 'النملة', 'چیونٹی کی خلقت', 'چیونٹی کے پاؤں', 'چھوٹے جانور'
+    ],
+  },
+  {
+    entityName: 'Sermon 224 (Absolute Integrity / Snatching Barley Husk from an Ant)',
+    passageType: 'sermon',
+    passageNumbers: [224],
+    canonicalTerms: [
+      'husk of barley', 'seed of barley', 'disobey allah regarding an ant',
+      'bit of honey', 'refusal of bribery', 'seven heavens', 'sermon 224', 'sermon #224',
+      'سبع سموات', 'جلب شعيرة', 'حلوى', 'عقیل', 'چھلکا'
+    ],
+  },
+  {
+    entityName: 'Saying 150 (Warning: Do Not Hope for Afterlife Without Deeds)',
+    passageType: 'saying',
+    passageNumbers: [150],
+    canonicalTerms: [
+      'hopes for the afterlife without work', 'hopes for the next life without work',
+      'hopes for afterlife without work', 'delays repentance by lengthening hopes',
+      'delays repentance', 'speaks like the ascetics', 'saying 150', 'saying #150',
+      'لا تكن ممن يرجو الآخرة بغير عمل', 'عمل کے بغیر آخرت کی امید', 'طولانی امیدوں'
+    ],
+  },
+  {
+    entityName: 'Saying 289 (Qualities of a True Brother in Allah)',
+    passageType: 'saying',
+    passageNumbers: [289],
+    canonicalTerms: [
+      'brother in allah', 'brother in faith', 'elevated in my eyes',
+      'world was small in his eyes', 'world was humble in his eyes', 'past companion',
+      'saying 289', 'saying #289', 'كان لي فيما مضى أخ في الله', 'کان لی فیما مضی اخ فی اللہ',
+      'میرا ایک بھائی تھا', 'دنیا اس کی نگاہوں میں حقیر تھی'
     ],
   },
   {
@@ -46,7 +141,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     canonicalTerms: [
       'shaqshaqiyya', 'shaqshaqia', 'shaqshaqiya', 'shiqshiqiyya', 'shiqshiqiyyah',
       'caliphate', 'first caliph', 'abu bakr', 'ibn abi quhafah',
-      'most famous sermon', 'famous sermon', 'شقشقیہ', 'خطبہ شقشقیہ'
+      'most famous sermon', 'famous sermon', 'sermon 3', 'sermon #3', 'شقشقیہ', 'خطبہ شقشقیہ'
     ],
   },
   {
@@ -55,16 +150,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageNumbers: [193],
     canonicalTerms: [
       'muttaqeen', 'muttaqin', 'pious', 'qualities of pious', 'hammam',
-      'متقین', 'ہمام', 'خطبہ متقین', 'پرہیزگار'
-    ],
-  },
-  {
-    entityName: 'Letter to Jarir ibn Abdillah al-Bajali (Envoy to Muawiyah)',
-    passageType: 'letter',
-    passageNumbers: [8],
-    canonicalTerms: [
-      'jarir', 'jarir ibn abdullah', 'jarir al-bajali', 'bajali', 'envoy to muawiyah',
-      'letter 8', 'جرير', 'جرير بن عبد الله'
+      'sermon 193', 'sermon #193', 'متقین', 'ہمام', 'خطبہ متقین', 'پرہیزگار'
     ],
   },
   {
@@ -82,7 +168,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageNumbers: [81],
     canonicalTerms: [
       'saying 81', 'worth of a person', 'value of every person', 'value of human',
-      'قیمۃ کل امرئ', 'حکمت 81'
+      'قيمۃ كل امرئ', 'قیمۃ کل امرئ', 'قدر و قیمت', 'حکمت 81'
     ],
   },
   {
@@ -99,26 +185,18 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageType: 'sermon',
     passageNumbers: [91],
     canonicalTerms: [
-      'ashbah', 'skeletons', 'ghosts', 'creation', 'angels',
+      'ashbah', 'skeletons', 'ghosts', 'creation of angels',
       'اشباح', 'خطبہ اشباح', 'فرشتے'
     ],
   },
   {
-    entityName: 'Qadi Shurayh (Purchase of House for 80 Dinars)',
+    entityName: 'Muawiyah / Ameer-e-Sham (Governor of Syria)',
     passageType: 'letter',
-    passageNumbers: [3],
+    passageNumbers: [6, 10, 17, 28, 32, 55, 64, 75],
     canonicalTerms: [
-      'shurayh', 'qadi shurayh', 'judge', 'house for 80 dinars', '80 dinars',
-      'شریح', 'قاضی شریح', 'مکان'
-    ],
-  },
-  {
-    entityName: 'Uthman ibn Hunayf (Governor of Basra / Feast of the Wealthy)',
-    passageType: 'letter',
-    passageNumbers: [45],
-    canonicalTerms: [
-      'uthman ibn hunayf', 'uthman bin hunaif', 'basra', 'feast', 'banquet',
-      'عثمان بن حنیف', 'والی بصرہ', 'دعوت'
+      'muawiya', 'muawiyah', 'moawiya', 'ameer e sham', 'ameer-e-sham', 'ameer sham',
+      'ammere sham', 'amir e sham', 'amir sham', 'governor of syria',
+      'معاویہ', 'معاوية', 'امیر شام', 'امیرِ شام', 'شام کے والی', 'اہل شام'
     ],
   },
   {
@@ -126,7 +204,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageType: 'dua',
     passageNumbers: [1],
     canonicalTerms: [
-      'kumayl', 'kumail', 'dua kumayl', 'dua kumail', 'knowledge vs wealth',
+      'kumayl', 'kumail', 'dua kumayl', 'dua kumail',
       'کمیل', 'کمیل بن زیاد', 'دعائے کمیل', 'دعاء کمیل'
     ],
   },
@@ -153,7 +231,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageType: 'sermon',
     passageNumbers: [115, 143],
     canonicalTerms: [
-      'istisqa', 'dua istisqa', 'rain', 'prayer for rain', 'drought',
+      'istisqa', 'dua istisqa', 'prayer for rain', 'drought',
       'بارش کی دعا', 'استسقاء', 'قحط', 'طلب باران'
     ],
   },
@@ -170,7 +248,7 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageType: 'sermon',
     passageNumbers: [1, 8, 13, 31, 54, 137],
     canonicalTerms: [
-      'jamal', 'camel', 'talha', 'zubayr', 'aisha', 'basra',
+      'jamal', 'camel', 'talha', 'zubayr', 'aisha',
       'جمل', 'طلحہ', 'زبیر', 'عائشہ'
     ],
   },
@@ -190,15 +268,6 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     canonicalTerms: [
       'khawarij', 'kharijites', 'nahrawan', 'no judgment but god',
       'خوارج', 'نہروان', 'لا حکم الا للہ'
-    ],
-  },
-  {
-    entityName: 'Saying 81: Real Worth of a Human Being',
-    passageType: 'saying',
-    passageNumbers: [81],
-    canonicalTerms: [
-      'saying 81', 'worth of every person', 'value in what they do well',
-      'قيمة كل امرئ', 'قدر و قیمت', 'حکمت 81'
     ],
   },
 ];
@@ -242,6 +311,41 @@ export class HybridSearchEngine {
   }
 
   /**
+   * Resolves query to an exact canonical passage if it matches unique historical entities or canonical discourse titles.
+   * e.g. "wasiiyat to imam hassan" -> { type: 'letter', number: 31 }
+   * e.g. "uthman ibn hunayf" -> { type: 'letter', number: 45 }
+   * e.g. "shurayh 80 dinars" -> { type: 'letter', number: 3 }
+   * e.g. "ibn muljam deathbed" -> { type: 'letter', number: 47 }
+   * e.g. "jihad is one of the doors of paradise" -> { type: 'sermon', number: 27 }
+   */
+  public static resolveEntityPassage(query: string): { type: PassageType; number: number } | null {
+    const q = query.toLowerCase().trim();
+    if (!q) return null;
+
+    let bestMatch: { type: PassageType; number: number; termLength: number } | null = null;
+
+    for (const entity of HISTORICAL_ENTITIES) {
+      if (entity.passageType && entity.passageNumbers && entity.passageNumbers.length === 1) {
+        for (const term of entity.canonicalTerms) {
+          const tLower = term.toLowerCase();
+          if (q.includes(tLower)) {
+            // Longest matching term represents highest specificity
+            if (!bestMatch || tLower.length > bestMatch.termLength) {
+              bestMatch = {
+                type: entity.passageType,
+                number: entity.passageNumbers[0],
+                termLength: tLower.length,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return bestMatch ? { type: bestMatch.type, number: bestMatch.number } : null;
+  }
+
+  /**
    * Resolves an explicitly requested passage or, if the user query is a follow-up or
    * pronoun inquiry (e.g. "what was the content of letter", "explain it"), resolves the
    * active passage from sliding conversation history.
@@ -251,7 +355,7 @@ export class HybridSearchEngine {
     historySummary?: string | null
   ): { type: PassageType; number: number } | null {
     // 1. Direct explicit in current query
-    const direct = this.extractExplicitPassage(query);
+    const direct = this.extractExplicitPassage(query) || this.resolveEntityPassage(query);
     if (direct) return direct;
 
     if (!historySummary) return null;
@@ -266,7 +370,7 @@ export class HybridSearchEngine {
     // 3. Scan sliding history backwards from most recent message
     const lines = historySummary.split('\n').reverse();
     for (const line of lines) {
-      const found = this.extractExplicitPassage(line);
+      const found = this.extractExplicitPassage(line) || this.resolveEntityPassage(line);
       if (found) {
         // Enforce category filter if current message narrowed it
         const wantsLetter = /\bletter\b|خط\b|مکتوب\b/i.test(query);
@@ -297,8 +401,8 @@ export class HybridSearchEngine {
     const rawLower = query.toLowerCase().trim();
     if (!rawLower) return [];
 
-    // Extract explicit passage if query mentions specific numbers
-    const explicitPassage = this.extractExplicitPassage(query);
+    // Extract explicit passage or resolve from historical entity mapping
+    const explicitPassage = this.extractExplicitPassage(query) || this.resolveEntityPassage(query);
 
     let requestedType: PassageType | undefined = filters?.passageType || explicitPassage?.type;
     let requestedNumber: number | undefined = filters?.passageNumber !== undefined ? filters.passageNumber : explicitPassage?.number;

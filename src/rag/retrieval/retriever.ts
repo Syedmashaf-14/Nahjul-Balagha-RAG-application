@@ -22,10 +22,15 @@ export class KnowledgeRetriever {
   ): Promise<RetrievedDocument[]> {
     const vectorStore = getVectorStore();
 
-    // Check for explicit passage reference in query or conversation history
+    // Check for explicit passage reference or historical entity resolution
     const explicit =
-      HybridSearchEngine.resolveContextualPassage(queryText, secondaryQuery) ||
-      (secondaryQuery ? HybridSearchEngine.extractExplicitPassage(secondaryQuery) : null);
+      filters?.passageNumber !== undefined && filters?.passageType
+        ? { type: filters.passageType, number: filters.passageNumber }
+        : HybridSearchEngine.extractExplicitPassage(queryText) ||
+          HybridSearchEngine.resolveEntityPassage(queryText) ||
+          HybridSearchEngine.resolveContextualPassage(queryText, secondaryQuery) ||
+          (secondaryQuery ? HybridSearchEngine.extractExplicitPassage(secondaryQuery) : null) ||
+          (secondaryQuery ? HybridSearchEngine.resolveEntityPassage(secondaryQuery) : null);
 
     const effectiveType = filters?.passageType || explicit?.type;
     const effectiveNumber = filters?.passageNumber !== undefined ? filters.passageNumber : explicit?.number;
@@ -78,13 +83,19 @@ export class KnowledgeRetriever {
         doc.metadata.passageNumber === effectiveNumber &&
         (!effectiveType || doc.metadata.passageType === effectiveType);
 
-      // Exact passage request receives unassailable top score
-      const rrf = isExactMatch ? 1000.0 : (1.5 / (k + rank + 1));
+      // Entity and high-confidence lexical matches receive dominant weight
+      const lexicalWeight = isExactMatch ? 1000.0 : doc.score >= 0.8 ? 50.0 : doc.score >= 0.4 ? 5.0 : 1.5;
+      const rrf = lexicalWeight / (k + rank + 1);
       docMap.set(key, { doc, rrfScore: rrf });
     });
 
     // Process vector results
     vectorDocs.forEach((doc, rank) => {
+      // If user/query specified a category (e.g. letter or sermon), prevent out-of-category bleed
+      if (effectiveType && doc.metadata.passageType !== effectiveType) {
+        return;
+      }
+
       const key = `${doc.metadata.passageType}_${doc.metadata.passageNumber}`;
       const isExactMatch =
         effectiveNumber !== undefined &&
