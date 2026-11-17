@@ -13,7 +13,7 @@ interface LLMConfig {
 const defaultModel =
   process.env.LLM_MODEL ||
   (process.env.OPENAI_API_KEY?.startsWith('sk-or-v1-') || process.env.OPENROUTER_API_KEY
-    ? 'openai/gpt-4o-mini'
+    ? 'google/gemini-2.5-flash'
     : 'gpt-4o');
 
 const defaultConfig: LLMConfig = {
