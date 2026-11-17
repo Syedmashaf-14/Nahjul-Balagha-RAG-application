@@ -10,7 +10,7 @@ import { LanguageDetector } from '../../ingestion/processors/language-detector';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { RAGResponse, ChatRequest } from '../../types/conversation.types';
 import { UserPreferences, UserPreferencesSchema } from '../../types/user.types';
-import { RetrievedDocument } from '../../types/passage.types';
+import { RetrievedDocument, PassageType, Citation } from '../../types/passage.types';
 
 function isOutOfDomainQuery(query: string): boolean {
   const lower = query.toLowerCase();
@@ -832,13 +832,79 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
         ? 'This explanation is general as no exact matching passages were found in the current knowledge base.'
         : null;
 
-    // 10. Asynchronously record reading history for personalization tracking
-    if (citations.length > 0) {
+    // 11. Strict Post-Generation Citation Alignment
+    // Ensure the citation(s) returned in the API and displayed in the UI Sources area
+    // exactly match the discourse(s) identified in cleanAnswer!
+    let alignedCitations = [...citations];
+    const discourseRegex = /\b(sermon|letter|saying|khutba|khutbah|maktoob|hikmah|خطبہ|مکتوب|حکمت)\s*#?\s*(\d+)\b/gi;
+    const matches = Array.from(cleanAnswer.matchAll(discourseRegex));
+
+    if (matches.length > 0) {
+      const referencedDiscourses: { type: PassageType; number: number }[] = [];
+      for (const m of matches) {
+        const rawType = m[1].toLowerCase();
+        const pNum = parseInt(m[2], 10);
+        const pType: PassageType =
+          rawType.includes('sermon') || rawType.includes('khutba') || rawType.includes('خطبہ')
+            ? 'sermon'
+            : rawType.includes('letter') || rawType.includes('maktoob') || rawType.includes('مکتوب')
+            ? 'letter'
+            : 'saying';
+
+        if (!referencedDiscourses.some((d) => d.type === pType && d.number === pNum)) {
+          referencedDiscourses.push({ type: pType, number: pNum });
+        }
+      }
+
+      if (referencedDiscourses.length > 0) {
+        const prioritizedCitations: Citation[] = [];
+
+        for (const ref of referencedDiscourses) {
+          const existing = alignedCitations.find(
+            (c) => c.passageType === ref.type && c.passageNumber === ref.number
+          );
+
+          if (existing) {
+            prioritizedCitations.push(existing);
+          } else {
+            const exactDoc = HybridSearchEngine.getExactPassage(ref.type, ref.number);
+            if (exactDoc) {
+              prioritizedCitations.push({
+                sourceId: exactDoc.metadata.sourceId || `${ref.type}_${ref.number}`,
+                passageType: exactDoc.metadata.passageType,
+                passageNumber: exactDoc.metadata.passageNumber,
+                text: exactDoc.content.length > 300 ? exactDoc.content.substring(0, 300) + '...' : exactDoc.content,
+                arabicText: exactDoc.metadata.arabicOriginal || null,
+                translator: exactDoc.metadata.translator || 'Syed Ali Reza / Allama Zeeshan Haider Jawadi',
+                language: exactDoc.metadata.language || 'english',
+                sourceType: 'translation',
+                confidence: 1.0,
+              });
+            }
+          }
+        }
+
+        for (const c of alignedCitations) {
+          if (!prioritizedCitations.some((p) => p.passageType === c.passageType && p.passageNumber === c.passageNumber)) {
+            if (userIntent !== 'name_only' && userIntent !== 'full_text') {
+              prioritizedCitations.push(c);
+            }
+          }
+        }
+
+        if (prioritizedCitations.length > 0) {
+          alignedCitations = prioritizedCitations;
+        }
+      }
+    }
+
+    // 12. Asynchronously record reading history for personalization tracking
+    if (alignedCitations.length > 0) {
       readingHistoryRepository
         .recordInteraction({
           userId,
-          passageType: citations[0].passageType,
-          passageNumber: citations[0].passageNumber,
+          passageType: alignedCitations[0].passageType,
+          passageNumber: alignedCitations[0].passageNumber,
           interactionType: 'explored',
           duration: Math.round((Date.now() - startTime) / 1000),
         })
@@ -847,7 +913,7 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
 
     return {
       answer: cleanAnswer,
-      citations,
+      citations: alignedCitations,
       relatedTopics,
       suggestedFollowUps,
       confidenceLevel,

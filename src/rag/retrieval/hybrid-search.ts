@@ -34,7 +34,19 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     passageNumbers: [31],
     canonicalTerms: [
       'letter to son', 'advice to son', 'hasan', 'hassan', 'imam hasan',
+      'wasiyat', 'wasiyyat', 'wasiiyat', 'wasiat', 'wasiyat to imam hasan', 'wasiiyat to imam hassan',
+      'wasiyat to son', 'advice to hasan', 'testament to hasan', 'al-hadirayn', 'hadirayn',
       'وصیت نامہ', 'امام حسن', 'فرزند'
+    ],
+  },
+  {
+    entityName: 'Shaqshaqiyya (Sermon on Caliphate and Patience)',
+    passageType: 'sermon',
+    passageNumbers: [3],
+    canonicalTerms: [
+      'shaqshaqiyya', 'shaqshaqia', 'shaqshaqiya', 'shiqshiqiyya', 'shiqshiqiyyah',
+      'caliphate', 'first caliph', 'abu bakr', 'ibn abi quhafah',
+      'most famous sermon', 'famous sermon', 'شقشقیہ', 'خطبہ شقشقیہ'
     ],
   },
   {
@@ -47,12 +59,30 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     ],
   },
   {
-    entityName: 'Shaqshaqiyya (Sermon on Caliphate and Patience)',
-    passageType: 'sermon',
-    passageNumbers: [3],
+    entityName: 'Letter to Jarir ibn Abdillah al-Bajali (Envoy to Muawiyah)',
+    passageType: 'letter',
+    passageNumbers: [8],
     canonicalTerms: [
-      'shaqshaqiyya', 'shaqshaqia', 'shaqshaqiya', 'caliphate',
-      'شقشقیہ', 'خطبہ شقشقیہ'
+      'jarir', 'jarir ibn abdullah', 'jarir al-bajali', 'bajali', 'envoy to muawiyah',
+      'letter 8', 'جرير', 'جرير بن عبد الله'
+    ],
+  },
+  {
+    entityName: 'Saying 147 (Discourse to Kumayl on Knowledge vs Wealth)',
+    passageType: 'saying',
+    passageNumbers: [147],
+    canonicalTerms: [
+      'saying 147', 'knowledge vs wealth', 'three types of people', 'bearers of knowledge',
+      'قلوب اوعیہ', 'حکمت 147'
+    ],
+  },
+  {
+    entityName: 'Saying 81 (The Worth of Every Person)',
+    passageType: 'saying',
+    passageNumbers: [81],
+    canonicalTerms: [
+      'saying 81', 'worth of a person', 'value of every person', 'value of human',
+      'قیمۃ کل امرئ', 'حکمت 81'
     ],
   },
   {
@@ -332,7 +362,7 @@ export class HybridSearchEngine {
       // Entity match bonus
       for (const entity of matchedEntities) {
         if (entity.passageNumbers?.includes(pNum) && (!entity.passageType || entity.passageType === pType)) {
-          score += 15.0;
+          score += 150.0;
         }
       }
 
@@ -395,5 +425,47 @@ export class HybridSearchEngine {
         score: Math.min(1.0, score / 15.0),
       };
     });
+  }
+
+  /**
+   * Retrieves a verified canonical document directly from the complete corpus
+   */
+  public static getExactPassage(type: PassageType, number: number): RetrievedDocument | null {
+    const found = this.allPassages.find((p) => {
+      const pType = (p.chapter || 'saying').toLowerCase() as PassageType;
+      const pNum = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
+      return pType === type && pNum === number;
+    });
+
+    if (!found) return null;
+
+    const pType = (found.chapter || 'saying').toLowerCase() as PassageType;
+    const pNum = typeof found.number === 'number' ? found.number : parseInt(found.number, 10);
+
+    return {
+      id: `doc_${pType}_${pNum}`,
+      content: found.translationText || found.arabicText || '',
+      metadata: {
+        book: 'Nahj al-Balagha',
+        sourceId: `src_${pType}_${pNum}`,
+        passageType: pType,
+        passageNumber: pNum,
+        passageTitle: found.title || `${pType.toUpperCase()} #${pNum}`,
+        language: 'english',
+        translator: found.translator || 'Syed Ali Reza / Allama Zeeshan Haider Jawadi',
+        contentType: 'translation',
+        commentaryAuthor: null,
+        chapter: pType,
+        section: found.section || pType,
+        chunkIndex: 0,
+        totalChunks: 1,
+        arabicOriginal: found.arabicText || null,
+        urduTranslation: found.urduTranslation || null,
+        topics: found.topics || [],
+        ingestedAt: new Date().toISOString(),
+        chunkSize: (found.translationText || found.arabicText || '').length,
+      },
+      score: 1.0,
+    };
   }
 }
