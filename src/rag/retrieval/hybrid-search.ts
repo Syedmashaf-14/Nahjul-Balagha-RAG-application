@@ -760,15 +760,20 @@ export class HybridSearchEngine {
 
     const trimmed = query.trim().toLowerCase();
 
-    // 2. Follow-up intent detection (including affirmative requests like "yes", "read completely", "جی ہاں")
+    // 2. Follow-up intent detection (strictly conversational follow-ups and referential pronouns)
     const isAffirmative =
       /^(yes|yeah|sure|yep|yup|ok|okay|please|read|show|read completely|show full|show full text|full text|read full|complete)$/i.test(trimmed) ||
       /^(جی ہاں|ہاں|جی|مکمل پڑھائیں|مکمل متن|پورا پڑھائیں|دکھائیں|جی ضرور)$/.test(trimmed);
 
-    const isFollowUp =
-      isAffirmative ||
-      /\b(content|meaning|translation|text|read|explain|tell me|more|about|context|full|urdu|arabic|detail|it|this|that|letter|sermon|saying|dua)\b/i.test(query) ||
-      /وضاحت|مطلب|ترجمہ|تفصیل|خلاصہ|اس|یہ|خط|خطبہ|مکتوب|کلام/i.test(query);
+    const isDemonstrativeFollowUp =
+      /\b(this|that|it|above|previous|earlier)\b/i.test(trimmed) &&
+      /\b(sermon|letter|saying|khutbah|maktub|hikmah|passage|discourse|text|one|above|meaning|translation|summary|explain|detail|content)\b/i.test(trimmed);
+
+    const isUrduFollowUp =
+      /(اس کا|اس کے|اس کی|اوپر والے|پچھلے|پہلے والے)\s*(مطلب|ترجمہ|تفصیل|خلاصہ|متن|خطبہ|مکتوب|خط|کلام)/.test(trimmed) ||
+      /^(اس کی وضاحت|اس کا مطلب|اس کا ترجمہ|اس کا خلاصہ|اوپر والا جواب|اوپر والا)/.test(trimmed);
+
+    const isFollowUp = isAffirmative || isDemonstrativeFollowUp || isUrduFollowUp;
 
     if (!isFollowUp) return null;
 

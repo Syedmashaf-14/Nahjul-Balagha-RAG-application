@@ -576,10 +576,7 @@ Which section or discourse would you like to explore today?`;
       request.passageRef ||
       HybridSearchEngine.extractExplicitPassage(request.message) ||
       HybridSearchEngine.resolveEntityPassage(request.message) ||
-      HybridSearchEngine.resolveContextualPassage(request.message, conversationHistorySummary) ||
-      (conversationHistorySummary ? HybridSearchEngine.resolveEntityPassage(conversationHistorySummary) : null) ||
-      (searchReadyQuery ? HybridSearchEngine.extractExplicitPassage(searchReadyQuery) : null) ||
-      (searchReadyQuery ? HybridSearchEngine.resolveEntityPassage(searchReadyQuery) : null);
+      HybridSearchEngine.resolveContextualPassage(request.message, conversationHistorySummary);
 
     const retrievalFilters = explicitPassage
       ? {
@@ -698,7 +695,15 @@ TOPICS: <topic1>, <topic2>`;
         new SystemMessage(systemPrompt),
         humanMessage,
       ]);
-      const fullText = response.content.toString();
+      let fullText = response.content?.toString().trim() || '';
+      if (!fullText) {
+        const additional = (response as any).additional_kwargs;
+        if (additional?.reasoning_content) {
+          fullText = additional.reasoning_content.toString().trim();
+        } else if (additional?.reasoning) {
+          fullText = additional.reasoning.toString().trim();
+        }
+      }
 
       cleanAnswer = fullText;
 

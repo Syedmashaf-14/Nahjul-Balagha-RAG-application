@@ -11,10 +11,9 @@ interface LLMConfig {
 }
 
 const defaultModel =
-  process.env.LLM_MODEL ||
-  (process.env.OPENAI_API_KEY?.startsWith('sk-or-v1-') || process.env.OPENROUTER_API_KEY
-    ? 'google/gemini-2.5-flash'
-    : 'gpt-4o');
+  process.env.LLM_MODEL && process.env.LLM_MODEL !== 'google/gemini-2.5-flash'
+    ? process.env.LLM_MODEL
+    : 'openrouter/free';
 
 const defaultConfig: LLMConfig = {
   provider:
@@ -24,7 +23,7 @@ const defaultConfig: LLMConfig = {
       : 'openai'),
   model: defaultModel,
   temperature: 0.3,
-  maxTokens: 1000,
+  maxTokens: 800,
 };
 
 export function createLLM(config: Partial<LLMConfig> = {}): BaseChatModel {
@@ -61,6 +60,9 @@ export function createLLM(config: Partial<LLMConfig> = {}): BaseChatModel {
           'HTTP-Referer': 'https://nehjulbalagah.vercel.app',
           'X-Title': 'Nahj al-Balagha Knowledge Platform',
         },
+      },
+      modelKwargs: {
+        reasoning: { effort: 'low' },
       },
     });
   }
