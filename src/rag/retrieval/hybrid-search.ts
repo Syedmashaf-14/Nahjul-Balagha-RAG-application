@@ -469,6 +469,78 @@ export class HybridSearchEngine {
   private static allPassages: any[] = canonicalPassagesJson as any[];
 
   /**
+   * Normalizes Arabic text by removing tashkeel / harakat, normalizing alef, yaa, taa marbutah,
+   * and standardizing Arabic and Western punctuation and whitespace.
+   */
+  public static normalizeArabic(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/[\u064B-\u065F\u0670\u0640]/g, '') // remove harakat / tashkeel & tatweel
+      .replace(/[إأآا]/g, 'ا')
+      .replace(/[يى]/g, 'ي')
+      .replace(/[ةه]/g, 'ه')
+      .replace(/[\u060C\u061B\u061F\u06D4.,\/#!$%\^&\*;:{}=\-_`~()«»؟?!\n\r\[\]]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  /**
+   * Cached pre-normalized Arabic corpus of all 799 canonical discourses for ultra-fast substring matching.
+   */
+  private static cachedNormalizedPassages: {
+    type: PassageType;
+    number: number;
+    title: string;
+    normArabic: string;
+  }[] = (canonicalPassagesJson as any[]).map((p) => {
+    const pType = (p.chapter || 'saying').toLowerCase() as PassageType;
+    const pNum = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
+    return {
+      type: pType,
+      number: pNum,
+      title: p.title || '',
+      normArabic: HybridSearchEngine.normalizeArabic(p.arabicText || ''),
+    };
+  });
+
+  /**
+   * Resolves raw Arabic quotations (e.g. from sermons, letters, sayings) to their exact canonical discourse
+   * by matching normalized multi-word n-gram sequences against the entire 799-discourse corpus.
+   */
+  public static resolveArabicQuotePassage(query: string): { type: PassageType; number: number } | null {
+    if (!query || !/[\u0600-\u06FF]/.test(query)) return null;
+
+    const normQ = this.normalizeArabic(query);
+    const words = normQ.split(' ').filter((w) => w.length > 1);
+    if (words.length < 3) return null;
+
+    let bestMatch: { type: PassageType; number: number; size: number } | null = null;
+    let maxPhraseLen = 0;
+
+    for (let size = Math.min(words.length, 12); size >= 3; size--) {
+      for (let i = 0; i <= words.length - size; i++) {
+        const phrase = words.slice(i, i + size).join(' ');
+        if (phrase.length < 8) continue;
+
+        for (const p of this.cachedNormalizedPassages) {
+          if (p.normArabic.includes(phrase)) {
+            if (phrase.length > maxPhraseLen) {
+              maxPhraseLen = phrase.length;
+              bestMatch = { type: p.type, number: p.number, size };
+            }
+          }
+        }
+      }
+      const current: { type: PassageType; number: number; size: number } | null = bestMatch;
+      if (current && current.size >= 4) break;
+    }
+
+    const finalMatch: { type: PassageType; number: number; size: number } | null = bestMatch;
+    return finalMatch ? { type: finalMatch.type, number: finalMatch.number } : null;
+  }
+
+  /**
    * Extracts an explicitly referenced passage type and number from any English or Urdu query.
    * e.g. "tell me about letter no 31" -> { type: 'letter', number: 31 }
    * e.g. "خطبہ نمبر 193" -> { type: 'sermon', number: 193 }
@@ -512,9 +584,15 @@ export class HybridSearchEngine {
    * e.g. "jihad is one of the doors of paradise" -> { type: 'sermon', number: 27 }
    */
   public static resolveEntityPassage(query: string): { type: PassageType; number: number } | null {
-    const q = query.toLowerCase().trim();
-    if (!q) return null;
+    if (!query) return null;
 
+    // 1. Direct Arabic Quote Match (conclusive exact phrase match)
+    const arabicQuote = this.resolveArabicQuotePassage(query);
+    if (arabicQuote) {
+      return arabicQuote;
+    }
+
+    const q = query.toLowerCase().trim();
     let bestMatch: { type: PassageType; number: number; termLength: number } | null = null;
 
     for (const entity of HISTORICAL_ENTITIES) {
@@ -541,8 +619,8 @@ export class HybridSearchEngine {
 
   /**
    * Resolves an explicitly requested passage or, if the user query is a follow-up or
-   * pronoun inquiry (e.g. "what was the content of letter", "explain it"), resolves the
-   * active passage from sliding conversation history.
+   * pronoun inquiry (e.g. "yes", "read completely", "what was the content of letter", "explain it"),
+   * resolves the active passage from sliding conversation history.
    */
   public static resolveContextualPassage(
     query: string,
@@ -554,8 +632,15 @@ export class HybridSearchEngine {
 
     if (!historySummary) return null;
 
-    // 2. Follow-up intent detection
+    const trimmed = query.trim().toLowerCase();
+
+    // 2. Follow-up intent detection (including affirmative requests like "yes", "read completely", "جی ہاں")
+    const isAffirmative =
+      /^(yes|yeah|sure|yep|yup|ok|okay|please|read|show|read completely|show full|show full text|full text|read full|complete)$/i.test(trimmed) ||
+      /^(جی ہاں|ہاں|جی|مکمل پڑھائیں|مکمل متن|پورا پڑھائیں|دکھائیں|جی ضرور)$/.test(trimmed);
+
     const isFollowUp =
+      isAffirmative ||
       /\b(content|meaning|translation|text|read|explain|tell me|more|about|context|full|urdu|arabic|detail|it|this|that|letter|sermon|saying|dua)\b/i.test(query) ||
       /وضاحت|مطلب|ترجمہ|تفصیل|خلاصہ|اس|یہ|خط|خطبہ|مکتوب|کلام/i.test(query);
 
@@ -635,6 +720,7 @@ export class HybridSearchEngine {
     }
 
     // Tokenize terms (ignoring common grammatical noise)
+    const normArabicQuery = /[\u0600-\u06FF]/.test(rawLower) ? HybridSearchEngine.normalizeArabic(rawLower) : '';
     const stopWords = new Set([
       'the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'in', 'that', 'to', 'for',
       'show', 'me', 'what', 'imam', 'ali', 'write', 'wrote', 'says', 'said', 'tell',
@@ -657,12 +743,20 @@ export class HybridSearchEngine {
       // If user specified an exact number and type, guarantee absolute top score
       if (requestedNumber !== undefined && pNum === requestedNumber) {
         if (!requestedType || pType === requestedType) {
-          scoredPassages.push({ passage: p, score: 1000.0 });
+          scoredPassages.push({ passage: p, score: 2500.0 });
           continue;
         }
       }
 
       let score = 0;
+
+      // Direct normalized Arabic phrase match bonus
+      if (normArabicQuery && normArabicQuery.length >= 10) {
+        const pNorm = HybridSearchEngine.normalizeArabic(p.arabicText || '');
+        if (pNorm.includes(normArabicQuery)) {
+          score += 2000.0;
+        }
+      }
 
       // Entity match bonus
       for (const entity of matchedEntities) {

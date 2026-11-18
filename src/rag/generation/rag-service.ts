@@ -211,9 +211,18 @@ function getDiscourseSummary(doc: RetrievedDocument, lang: 'english' | 'urdu'): 
 function detectUserIntent(query: string): 'name_only' | 'summary' | 'full_text' | 'general' {
   const q = query.toLowerCase().trim();
 
+  // Affirmative follow-ups to read full text (e.g. "yes", "sure", "read completely", "جی ہاں")
+  const isAffirmative =
+    /^(yes|yeah|sure|yep|yup|ok|okay|please|yes please|read|show|read completely|show full|show full text|full text|read full|complete)$/i.test(q) ||
+    /^(جی ہاں|ہاں|جی|مکمل پڑھائیں|مکمل متن|پورا پڑھائیں|دکھائیں|جی ضرور|ہاں جی)$/.test(q);
+
+  if (isAffirmative) {
+    return 'full_text';
+  }
+
   // Full text / Content requests
   if (
-    /\b(full|complete|entire|unabridged|whole text|read full|content|text of|what was the content|show me the content|what is the content|what was written|read the letter|read the sermon)\b/i.test(q) ||
+    /\b(full|complete|entire|unabridged|whole text|read full|read completely|content|text of|what was the content|show me the content|what is the content|what was written|read the letter|read the sermon)\b/i.test(q) ||
     /مکمل|پورا|تمام متن|متن|کیا لکھا ہے/i.test(q)
   ) {
     return 'full_text';
@@ -577,15 +586,17 @@ INSTRUCTIONS ACCORDING TO INTENT:
 ${
   userIntent === 'name_only'
     ? `- THE USER ASKS ONLY FOR THE NAME / NUMBER.
-- Answer in 1 to 2 direct, concise sentences directly naming the sermon/letter and its number (e.g., "The most famous sermon in Nahj al-Balagha is **Sermon 3**, known as **Khutbah ash-Shiqshiqiyyah (خطبہ شقشقیہ)**.").
+- Answer in 1 to 2 direct, concise sentences directly naming the sermon/letter and its number (e.g., "The discourse in Nahj al-Balagha is **Sermon 29**: **من خطبة له عليه السلام...**").
 - DO NOT dump the full text, raw paragraphs, or multi-page essays!
-- Promptly offer follow-up options: "Would you like an overview of its historical context, a summary of its key themes, or the full Arabic and English/Urdu translation?"`
+- Conclude by asking: "Would you like to read the complete discourse with full unabridged Arabic text and English/Urdu translation? Just reply 'yes' or 'read completely'."`
     : userIntent === 'summary'
     ? `- THE USER ASKS FOR AN OVERVIEW / SUMMARY.
-- DO NOT dump the full text! Provide an articulate 2-3 paragraph summary of why it is famous, its historical context, and core themes, quoting only 1-2 lines.`
+- DO NOT dump the full text! Provide an articulate 2-3 paragraph summary of why it is famous, its historical context, and core themes, quoting only 1-2 lines.
+- Conclude by asking: "Would you like to read the complete discourse with full unabridged Arabic text and English/Urdu translation? Just reply 'yes' or 'read completely'."`
     : userIntent === 'full_text'
-    ? `- The user requested full text. Present the complete unabridged discourse.`
-    : `- Answer the specific question directly, citing pertinent excerpts without raw full-text dumps.`
+    ? `- The user requested full text. Present the complete unabridged discourse with full original Arabic text and complete translation.`
+    : `- Answer the specific question directly, citing pertinent excerpts without raw full-text dumps.
+- Conclude by asking: "Would you like to read the complete discourse with full unabridged Arabic text and English/Urdu translation? Just reply 'yes' or 'read completely'."`
 }
 
 Always conclude with a clean, concise Book Reference.
@@ -603,16 +614,29 @@ TOPICS: <topic1>, <topic2>`;
 
       let humanMessage: HumanMessage;
       if (request.image) {
+        const isUrdu = detectedLang === 'urdu';
+        const visionText = `${isUrdu ? '🔴 لازمی ہدایت برائے زبان (URDU MANDATE): آپ کا مکمل جواب صرف اردو میں ہونا چاہیے۔' : '🔴 MANDATORY LANGUAGE INSTRUCTION (ENGLISH MANDATE): Your entire response must be in English.'}
+
+USER QUESTION:
+${request.message || 'Please inspect this image, transcribe the text, and identify which discourse from Nahj al-Balagha it is.'}
+
+[NAHJ VISION — MULTIMODAL MANUSCRIPT & SCREENSHOT INSPECTION]:
+The user has uploaded an image (such as an Arabic manuscript, calligraphy, book page, or mobile app screenshot showing Nahj al-Balagha).
+1. **OCR / Transcription**: Carefully inspect and transcribe the visible heading (e.g. خطبہ / مکتوب / حکمت / Sermon / Letter / Saying number and title) and key text visible in the image.
+2. **Canonical Identification**: Accurately determine the exact category (Sermon, Letter, or Saying) and its canonical number in Nahj al-Balagha strictly from the text in the image. Name it clearly (e.g. **Letter #31**, **Sermon #29**, **Saying #147**).
+3. **Core Wisdom & Context**: Explain the background, spiritual meaning, and guidance contained in this discourse.
+4. **Interactive Offer**: Conclude before the references by asking: "${isUrdu ? 'کیا آپ اس کلام کا مکمل اور تفصیلی عربی متن بمع اردو ترجمہ پڑھنا چاہتے ہیں؟ آپ "جی ہاں" یا "مکمل پڑھائیں" لکھ کر جواب دے سکتے ہیں۔' : 'Would you like to read the complete discourse with full unabridged Arabic text and English/Urdu translation? Just reply "yes" or "read completely".'}"
+
+Always conclude with the canonical Book Reference.
+At the end of your response, on a new line, add:
+FOLLOW_UPS: <Question 1> | <Question 2> | <Question 3>
+TOPICS: <topic1>, <topic2>`;
+
         humanMessage = new HumanMessage({
           content: [
             {
               type: 'text',
-              text: `${promptMessage}\n\n[USER HAS ATTACHED AN IMAGE]:
-The user has uploaded an image (such as an Arabic manuscript, calligraphy, book page, or excerpt).
-1. Inspect the image carefully: identify any Arabic calligraphy, Quranic/Nahj al-Balagha script, or manuscript text.
-2. Transcribe and explain the text visible in the image.
-3. Detail how it relates to Nahj al-Balagha and the teachings of Imam Ali (a.s.).
-4. Respond strictly in the designated language: ${detectedLang === 'urdu' ? 'URDU (اردو)' : 'ENGLISH'}.`,
+              text: visionText,
             },
             {
               type: 'image_url',
@@ -697,18 +721,18 @@ The user has uploaded an image (such as an Arabic manuscript, calligraphy, book 
             cleanAnswer = `${discourseOverview}${arabicSnippet}\n\n*Would you like to explore its core themes, historical setting, or read the full text with Arabic and English translation?*`;
           }
         } else if (userIntent === 'full_text') {
-          const arabicText = topDoc.metadata.arabicOriginal ? cleanPassageText(topDoc.metadata.arabicOriginal, 3000) : '';
-          const englishText = cleanPassageText(topDoc.content, 3000);
-          const urduText = topDoc.metadata.urduTranslation ? cleanPassageText(topDoc.metadata.urduTranslation, 3000) : '';
+          const arabicText = topDoc.metadata.arabicOriginal ? cleanPassageText(topDoc.metadata.arabicOriginal, 40000) : '';
+          const englishText = cleanPassageText(topDoc.content, 40000);
+          const urduText = topDoc.metadata.urduTranslation ? cleanPassageText(topDoc.metadata.urduTranslation, 40000) : '';
 
           if (detectedLang === 'urdu') {
-            cleanAnswer = `### نہج البلاغہ — ${urduCat} نمبر ${topDoc.metadata.passageNumber} کا متن:
+            cleanAnswer = `### نہج البلاغہ — ${urduCat} نمبر ${topDoc.metadata.passageNumber} کا مکمل متن:
 *«${topDoc.metadata.passageTitle}»*
 
 ${arabicText ? `> **«${arabicText}»**\n\n` : ''}**اردو ترجمہ:**
 «${urduText || englishText}»`;
           } else {
-            cleanAnswer = `### Nahj al-Balagha — Content of ${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}:
+            cleanAnswer = `### Nahj al-Balagha — Complete Text of ${topDoc.metadata.passageType.toUpperCase()} #${topDoc.metadata.passageNumber}:
 *${topDoc.metadata.passageTitle}*
 
 ${arabicText ? `> **«${arabicText}»**\n\n` : ''}**Translation (English):**
@@ -729,6 +753,23 @@ ${urduText ? `\n**Urdu Translation:**\n«${urduText}»` : ''}`;
       }
     }
   }
+
+    // Ensure proactive offer to read complete discourse is always included if not already requested
+    if (userIntent !== 'full_text' && retrievedDocs.length > 0) {
+      const hasOffer = /read the complete discourse|مکمل اور تفصیلی عربی متن|would you like to read/i.test(cleanAnswer);
+      if (!hasOffer) {
+        const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(cleanAnswer);
+        const offer = isUrdu
+          ? '\n\n*کیا آپ اس کلامِ مبارک کا مکمل اور تفصیلی عربی متن بمع اردو ترجمہ پڑھنا چاہتے ہیں؟ آپ "جی ہاں" یا "مکمل پڑھائیں" لکھ کر جواب دے سکتے ہیں۔*'
+          : '\n\n*Would you like to read the complete discourse with full unabridged Arabic text and English/Urdu translation? Just reply "yes" or "read completely".*';
+
+        if (cleanAnswer.includes('---')) {
+          cleanAnswer = cleanAnswer.replace('---', `${offer}\n\n---`);
+        } else {
+          cleanAnswer += offer;
+        }
+      }
+    }
 
     // 10. Guarantee that every answer includes the formal Book Reference block
     if (citations.length > 0 && !cleanAnswer.includes('Book Reference') && !cleanAnswer.includes('کتابی حوالہ') && !cleanAnswer.includes('ماخذ:')) {
