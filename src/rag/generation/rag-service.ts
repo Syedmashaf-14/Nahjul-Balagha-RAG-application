@@ -824,6 +824,7 @@ TOPICS: <topic1>, <topic2>`;
                 { role: 'user', content: promptMessage },
               ],
               max_tokens: 1500,
+              reasoning: { effort: 'none' },
             }),
           });
 
@@ -874,6 +875,7 @@ TOPICS: <topic1>, <topic2>`;
                 { role: 'user', content: promptMessage },
               ],
               max_tokens: 1500,
+              reasoning: { effort: 'none' },
             }),
           });
 

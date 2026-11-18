@@ -62,7 +62,7 @@ export function createLLM(config: Partial<LLMConfig> = {}): BaseChatModel {
         },
       },
       modelKwargs: {
-        reasoning: { effort: 'low' },
+        reasoning: { effort: 'none' },
       },
     });
   }
