@@ -27,10 +27,7 @@ export class KnowledgeRetriever {
       filters?.passageNumber !== undefined && filters?.passageType
         ? { type: filters.passageType, number: filters.passageNumber }
         : HybridSearchEngine.extractExplicitPassage(queryText) ||
-          HybridSearchEngine.resolveEntityPassage(queryText) ||
-          HybridSearchEngine.resolveContextualPassage(queryText, secondaryQuery) ||
-          (secondaryQuery ? HybridSearchEngine.extractExplicitPassage(secondaryQuery) : null) ||
-          (secondaryQuery ? HybridSearchEngine.resolveEntityPassage(secondaryQuery) : null);
+          HybridSearchEngine.resolveEntityPassage(queryText);
 
     const effectiveType = filters?.passageType || explicit?.type;
     const effectiveNumber = filters?.passageNumber !== undefined ? filters.passageNumber : explicit?.number;

@@ -564,10 +564,15 @@ Which section or discourse would you like to explore today?`;
       } as UserPreferences;
     }
 
-    // 4. Query reformulation
+    // 4. Query reformulation (only pass history summary if current query exhibits referential dependencies)
+    const hasReferentialDependency =
+      /^(yes|yeah|sure|yep|yup|ok|okay|please|read|show|full text|complete)$/i.test(request.message.trim()) ||
+      /\b(this|that|it|above|previous|earlier|them|he|she|his|her|its|same|another|next|more)\b/i.test(request.message) ||
+      /(اس کا|اس کے|اس کی|اوپر والے|پچھلے|پہلے والے|مزید|دوسرا)/.test(request.message);
+
     const searchReadyQuery = await queryRewriter.rewrite(
       request.message,
-      conversationHistorySummary,
+      hasReferentialDependency ? conversationHistorySummary : null,
       detectedLang
     );
 
@@ -729,7 +734,7 @@ TOPICS: <topic1>, <topic2>`;
 
       let retrySucceeded = false;
       try {
-        const fallbackLlm = createLLM({ maxTokens: 400, temperature: 0.2 });
+        const fallbackLlm = createLLM({ maxTokens: 1200, temperature: 0.2 });
         const retryRes = await fallbackLlm.invoke([
           new SystemMessage(systemPrompt),
           new HumanMessage(request.message),
