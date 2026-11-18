@@ -4,6 +4,7 @@ import canonicalPassagesJson from '../../ingestion/canonical-passages.json';
 export interface EntityMatch {
   passageType?: PassageType;
   passageNumbers?: number[];
+  candidatePassages?: Array<{ type: PassageType; number: number }>;
   canonicalTerms: string[];
   entityName: string;
 }
@@ -13,6 +14,11 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     entityName: 'Hazrat Fatima al-Zahra (s.a.) / Sayyidatu Nisa al-Alamin',
     passageType: 'sermon',
     passageNumbers: [202, 28, 24],
+    candidatePassages: [
+      { type: 'sermon', number: 202 },
+      { type: 'letter', number: 28 },
+      { type: 'letter', number: 24 },
+    ],
     canonicalTerms: [
       'fatima', 'fatimah', 'hazrat fatima', 'hazrat fatimah', 'zahra', 'al-zahra',
       'sayyidatun nisa', 'sayyidatu nisa', 'sayyida fatima', 'bibi fatima',
@@ -32,6 +38,12 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     entityName: 'Imam al-Husayn ibn Ali (a.s.) / Sayyid al-Shuhada',
     passageType: 'letter',
     passageNumbers: [47, 207, 24, 31],
+    candidatePassages: [
+      { type: 'letter', number: 47 },
+      { type: 'sermon', number: 207 },
+      { type: 'letter', number: 24 },
+      { type: 'letter', number: 31 },
+    ],
     canonicalTerms: [
       'imam hussain', 'imam husayn', 'hussain', 'husayn', 'imam husein',
       'al-husayn', 'al-hussain', 'sayyid al-shuhada', 'grandson of the prophet',
@@ -50,6 +62,12 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     entityName: 'Imam al-Hasan ibn Ali (a.s.) / al-Mujtaba',
     passageType: 'letter',
     passageNumbers: [31, 47, 207, 24],
+    candidatePassages: [
+      { type: 'letter', number: 31 },
+      { type: 'letter', number: 47 },
+      { type: 'sermon', number: 207 },
+      { type: 'letter', number: 24 },
+    ],
     canonicalTerms: [
       'imam hasan', 'imam hassan', 'al-hasan', 'al-hassan', 'hasan ibn ali',
       'things mentioned about imam hasan', 'things mentioned about imam hassan',
@@ -534,13 +552,28 @@ export class HybridSearchEngine {
     const words = normQ.split(' ').filter((w) => w.length > 1);
     if (words.length < 3) return null;
 
+    // For longer quotes (>= 6 words), require at least 5 words or substantial phrase length
+    // to prevent common liturgical formulas (e.g. "لا اله الا هو", "الحمد لله الذي") from creating false matches
+    const minSize = words.length >= 6 ? Math.min(5, words.length) : 3;
+
     let bestMatch: { type: PassageType; number: number; size: number } | null = null;
     let maxPhraseLen = 0;
 
-    for (let size = Math.min(words.length, 12); size >= 3; size--) {
+    for (let size = Math.min(words.length, 12); size >= minSize; size--) {
       for (let i = 0; i <= words.length - size; i++) {
         const phrase = words.slice(i, i + size).join(' ');
-        if (phrase.length < 8) continue;
+        if (phrase.length < 12) continue;
+
+        // Skip ubiquitous short liturgical formulas if they are the only match
+        if (
+          size <= 4 &&
+          (phrase === 'لا اله الا هو' ||
+            phrase === 'الحمد لله الذي' ||
+            phrase === 'صلي الله عليه' ||
+            phrase === 'اما بعد فان')
+        ) {
+          continue;
+        }
 
         for (const p of this.cachedNormalizedPassages) {
           if (p.normArabic.includes(phrase)) {
@@ -646,35 +679,55 @@ export class HybridSearchEngine {
       .split(/\s+/)
       .filter((t) => t.length > 1);
 
-    let bestScore = -1;
-    let bestPassage: { type: PassageType; number: number } = {
-      type: defaultType,
-      number: entity.passageNumbers![0],
-    };
+    // Expand transliteration variations (e.g. hussain <-> husayn, hasan <-> hassan)
+    const expandedTokens = new Set<string>();
+    for (const t of queryTokens) {
+      expandedTokens.add(t);
+      if (t.includes('ss')) expandedTokens.add(t.replace(/ss/g, 's'));
+      if (t.includes('hus')) {
+        expandedTokens.add('husayn');
+        expandedTokens.add('hussain');
+        expandedTokens.add('husain');
+        expandedTokens.add('حسین');
+      }
+      if (t.includes('has')) {
+        expandedTokens.add('hasan');
+        expandedTokens.add('hassan');
+        expandedTokens.add('حسن');
+      }
+      if (t.includes('fatim')) {
+        expandedTokens.add('fatima');
+        expandedTokens.add('fatimah');
+        expandedTokens.add('فاطم');
+      }
+    }
 
-    for (const pNum of entity.passageNumbers!) {
+    // Build candidate list from candidatePassages or passageNumbers
+    const candidates: Array<{ type: PassageType; number: number }> =
+      entity.candidatePassages && entity.candidatePassages.length > 0
+        ? entity.candidatePassages
+        : (entity.passageNumbers || []).map((num) => ({ type: defaultType, number: num }));
+
+    let bestScore = -1;
+    let bestPassage: { type: PassageType; number: number } = candidates[0];
+
+    for (const cand of candidates) {
       const passage = this.allPassages.find((p) => {
         const pt = (p.chapter || 'saying').toLowerCase() as PassageType;
         const pn = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
-        return pt === defaultType && pn === pNum;
+        return pt === cand.type && pn === cand.number;
       });
 
-      // Fall back: search without type constraint (for mixed-type entity lists like Husayn's)
-      const passageFallback = passage || this.allPassages.find((p) => {
-        const pn = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
-        return pn === pNum;
-      });
+      if (!passage) continue;
 
-      if (!passageFallback) continue;
-
-      const pType = (passageFallback.chapter || 'saying').toLowerCase() as PassageType;
-      const pTitle = (passageFallback.title || '').toLowerCase();
-      const pEng = (passageFallback.translationText || '').toLowerCase();
-      const pUrdu = (passageFallback.urduTranslation || '').toLowerCase();
-      const pTopics = ((passageFallback.topics || []) as string[]).join(' ').toLowerCase();
+      const pType = (passage.chapter || 'saying').toLowerCase() as PassageType;
+      const pTitle = (passage.title || '').toLowerCase();
+      const pEng = (passage.translationText || '').toLowerCase();
+      const pUrdu = (passage.urduTranslation || '').toLowerCase();
+      const pTopics = ((passage.topics || []) as string[]).join(' ').toLowerCase();
 
       let score = 0;
-      for (const token of queryTokens) {
+      for (const token of expandedTokens) {
         if (pTitle.includes(token)) score += 10;
         if (pEng.includes(token)) score += 3;
         if (pUrdu.includes(token)) score += 3;
@@ -683,7 +736,7 @@ export class HybridSearchEngine {
 
       if (score > bestScore) {
         bestScore = score;
-        bestPassage = { type: pType, number: pNum };
+        bestPassage = { type: pType, number: cand.number };
       }
     }
 

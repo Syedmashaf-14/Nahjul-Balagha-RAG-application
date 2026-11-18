@@ -500,6 +500,50 @@ Which section or discourse would you like to explore today?`;
       };
     }
 
+    // 3.5. Out-of-Corpus Arabic Quote Guardrail
+    // When a user pastes a verbatim Arabic phrase/hadith/ayah with 4+ words that is NOT in the 799 Nahj al-Balagha discourses
+    if (!request.image && /[\u0600-\u06FF]/.test(request.message)) {
+      const arabicQuoteMatch = HybridSearchEngine.resolveArabicQuotePassage(request.message);
+      const explicitRef = HybridSearchEngine.extractExplicitPassage(request.message) || HybridSearchEngine.resolveEntityPassage(request.message);
+
+      if (!arabicQuoteMatch && !explicitRef) {
+        const arabicWords = request.message
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, ' ')
+          .trim()
+          .split(/\s+/)
+          .filter((w) => /[\u0600-\u06FF]/.test(w) && w.length > 1);
+
+        // If it's a substantive Arabic passage (4+ Arabic words) and does NOT contain Urdu questioning markers
+        const hasUrduOrMetaGrammar = /(نہج|خطبہ|مکتوب|حکمت|دعا|کیا|کون|کس|کی|کے|ہے|ہیں|بتائیں|فرمائیں|تھا|تھی|تھے|پڑھائیں)/.test(request.message);
+
+        if (arabicWords.length >= 4 && !hasUrduOrMetaGrammar) {
+          const isUrdu = detectedLang === 'urdu';
+          const nonCorpusMsg = isUrdu
+            ? `یہ عربی عبارت شریف الرضی رحمۃ اللہ علیہ کی مرتب کردہ **نہج البلاغہ کے ۷۹۹ فرمودات** (۲۴۱ خطبات، ۷۹ مکتوبات، اور ۴۸۹ حکمتوں) میں شامل نہیں ہے۔\n\nغالباً یہ مبارک عبارت **قرآن مجید کی آیت**، **احادیث نبویہ (ص)**، یا کسی دوسری معتبر اسلامی کتاب سے منقول ہے۔\n\nاگر آپ نہج البلاغہ کے کسی مخصوص خطبے، مکتوب، حکمت یا دعا کا مطالعہ فرمانا چاہتے ہیں، تو آپ اس کا نمبر یا متعلقہ موضوع دریافت فرما سکتے ہیں۔`
+            : `This Arabic passage was not found within the canonical 799 discourses of **Nahj al-Balagha** (comprising 241 Sermons, 79 Letters, and 489 Sayings) compiled by al-Sharif al-Radi.\n\nThis sacred text appears to be a **verse from the Holy Qur'an**, a **Hadith of the Holy Prophet (s.a.w.)**, or an excerpt from another Islamic source.\n\nIf you would like to explore any sermon, letter, saying, or supplication from Nahj al-Balagha, please specify a passage number or thematic topic.`;
+
+          return {
+            answer: nonCorpusMsg,
+            citations: [],
+            relatedTopics: ['241 Sermons of Nahj al-Balagha', '79 Letters of Imam Ali', '489 Sayings & Maxims'],
+            suggestedFollowUps: isUrdu
+              ? [
+                  'خطبہ نمبر 27 (جہاد کا خطبہ) پیش کریں',
+                  'حکمت نمبر 147 (کمیل بن زیاد) کا خلاصہ فرمائیں',
+                  'خط نمبر 53 (مالک اشتر کے نام عہد نامہ)',
+                ]
+              : [
+                  'Explain Sermon 27 on Jihad',
+                  'Summarize Saying 147 to Kumayl on knowledge',
+                  'Explore Letter 53 to Malik al-Ashtar',
+                ],
+            confidenceLevel: 'insufficient',
+            disclaimer: 'The quoted Arabic text is not part of Nahj al-Balagha.',
+          };
+        }
+      }
+    }
+
     // 3. Fetch user preferences from MongoDB (with graceful fallback if database is connecting)
     let preferences: UserPreferences;
     try {
