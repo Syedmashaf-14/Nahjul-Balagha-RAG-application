@@ -10,6 +10,65 @@ export interface EntityMatch {
 
 export const HISTORICAL_ENTITIES: EntityMatch[] = [
   {
+    entityName: 'Hazrat Fatima al-Zahra (s.a.) / Sayyidatu Nisa al-Alamin',
+    passageType: 'sermon',
+    passageNumbers: [202, 28, 24],
+    canonicalTerms: [
+      'fatima', 'fatimah', 'hazrat fatima', 'hazrat fatimah', 'zahra', 'al-zahra',
+      'sayyidatun nisa', 'sayyidatu nisa', 'sayyida fatima', 'bibi fatima',
+      'lady fatima', 'daughter of the prophet', 'burial of fatima', 'funeral of fatima',
+      'things mentioned about hazrat fatima', 'fatima in nahj al balagha', 'fatima in nahj',
+      'فاطمة', 'فاطمہ', 'حضرت فاطمہ', 'سيدة النساء', 'الزهراء', 'زہراء', 'بتول', 'دفن فاطمہ',
+      'فاطمۃ الزہراء', 'سیدہ فاطمہ', 'دختر رسول'
+    ],
+  },
+  {
+    entityName: 'The Holy Prophet Muhammad (s.a.w.)',
+    passageType: 'sermon',
+    passageNumbers: [1, 2, 26, 94, 95, 105, 116, 161, 190, 235],
+    canonicalTerms: [
+      'prophet muhammad', 'holy prophet', 'messenger of allah', 'rasool allah', 'rasulullah',
+      'rasoolullah', 'burial of the prophet', 'washing of the prophet',
+      'رسول اللہ', 'پیغمبر اکرم', 'خاتم النبیین', 'نبی کریم', 'رسول خدا'
+    ],
+  },
+  {
+    entityName: 'Abu Dharr al-Ghifari (Exile to al-Rabadhah)',
+    passageType: 'sermon',
+    passageNumbers: [130],
+    canonicalTerms: [
+      'abu dharr', 'abu dhar', 'abu zarr', 'al-ghifari', 'rabadhah', 'exile of abu dharr',
+      'ابوذر', 'ابوذر غفاری', 'ربذہ'
+    ],
+  },
+  {
+    entityName: 'Salman al-Farsi (Admonition on the World like a Snake)',
+    passageType: 'letter',
+    passageNumbers: [68],
+    canonicalTerms: [
+      'salman al-farsi', 'salman farsi', 'salman', 'snake', 'letter to salman',
+      'سلمان فارسی', 'سلمان'
+    ],
+  },
+  {
+    entityName: 'Ammar ibn Yasir (Lamenting the Righteous Companions)',
+    passageType: 'sermon',
+    passageNumbers: [182, 92],
+    canonicalTerms: [
+      'ammar', 'ammar ibn yasir', 'ammar bin yasir', 'ayna ammar', 'where is ammar',
+      'عمار', 'عمار بن یاسر', 'این عمار'
+    ],
+  },
+  {
+    entityName: 'Aqil ibn Abi Talib (The Red-Hot Iron & Public Treasury)',
+    passageType: 'sermon',
+    passageNumbers: [224, 36],
+    canonicalTerms: [
+      'aqil', 'aqeel', 'aqil ibn abi talib', 'red-hot iron', 'bayt al-mal',
+      'عقیل', 'عقیل بن ابی طالب', 'لوہا'
+    ],
+  },
+  {
     entityName: 'Moral Testament to Imam al-Hasan (a.s.)',
     passageType: 'letter',
     passageNumbers: [31],
@@ -325,14 +384,15 @@ export class HybridSearchEngine {
     let bestMatch: { type: PassageType; number: number; termLength: number } | null = null;
 
     for (const entity of HISTORICAL_ENTITIES) {
-      if (entity.passageType && entity.passageNumbers && entity.passageNumbers.length === 1) {
+      if (entity.passageNumbers && entity.passageNumbers.length >= 1) {
         for (const term of entity.canonicalTerms) {
           const tLower = term.toLowerCase();
           if (q.includes(tLower)) {
             // Longest matching term represents highest specificity
             if (!bestMatch || tLower.length > bestMatch.termLength) {
+              const defaultType = entity.passageType || 'sermon';
               bestMatch = {
-                type: entity.passageType,
+                type: defaultType,
                 number: entity.passageNumbers[0],
                 termLength: tLower.length,
               };
@@ -441,7 +501,14 @@ export class HybridSearchEngine {
     }
 
     // Tokenize terms (ignoring common grammatical noise)
-    const stopWords = new Set(['the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'in', 'that', 'to', 'for', 'show', 'me', 'what', 'imam', 'ali', 'write', 'wrote', 'says', 'said', 'tell']);
+    const stopWords = new Set([
+      'the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'in', 'that', 'to', 'for',
+      'show', 'me', 'what', 'imam', 'ali', 'write', 'wrote', 'says', 'said', 'tell',
+      'things', 'thing', 'mentioned', 'mention', 'mentions', 'about', 'hazrat', 'say',
+      'does', 'did', 'do', 'any', 'all', 'give', 'detail', 'details', 'us', 'are', 'was',
+      'related', 'regarding', 'concerning', 'explain', 'explanation', 'view', 'views',
+      'personality', 'personalities', 'person', 'quote', 'quotes', 'reference', 'references'
+    ]);
     const tokens = rawLower
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, ' ')
       .split(/\s+/)
@@ -465,7 +532,7 @@ export class HybridSearchEngine {
 
       // Entity match bonus
       for (const entity of matchedEntities) {
-        if (entity.passageNumbers?.includes(pNum) && (!entity.passageType || entity.passageType === pType)) {
+        if (entity.passageNumbers?.includes(pNum)) {
           score += 150.0;
         }
       }
