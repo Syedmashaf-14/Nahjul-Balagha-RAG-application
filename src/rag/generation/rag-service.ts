@@ -472,6 +472,99 @@ Which section or discourse would you like to explore today?`;
       }
     }
 
+    // 2.7. Out-of-bounds Discourse Number Check
+    // Canonical Nahj al-Balagha limits: 241 Sermons, 79 Letters, 489 Sayings
+    const explicitNumCheck = HybridSearchEngine.extractExplicitPassage(request.message);
+    if (explicitNumCheck) {
+      const { type, number } = explicitNumCheck;
+      const isOutOfBounds =
+        (type === 'sermon' && (number < 1 || number > 241)) ||
+        (type === 'letter' && (number < 1 || number > 79)) ||
+        (type === 'saying' && (number < 1 || number > 489)) ||
+        (type === 'dua' && (number < 1 || number > 10));
+
+      if (isOutOfBounds) {
+        const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(request.message);
+        const typeNameUrdu = type === 'sermon' ? 'خطبہ' : type === 'letter' ? 'مکتوب' : type === 'saying' ? 'حکمت' : 'دعا';
+        const typeNameEng = type === 'sermon' ? 'Sermon' : type === 'letter' ? 'Letter' : type === 'saying' ? 'Saying' : 'Dua';
+        const maxLimit = type === 'sermon' ? 241 : type === 'letter' ? 79 : type === 'saying' ? 489 : 10;
+
+        const outOfBoundsMsg = isUrdu
+          ? `نہج البلاغہ میں **${typeNameUrdu} نمبر ${number}** موجود نہیں ہے۔ شریف الرضی رحمۃ اللہ علیہ کی مرتب کردہ نہج البلاغہ میں کل **${maxLimit} ${typeNameUrdu}** شامل ہیں۔\n\n### 📖 نہج البلاغہ کی کلامی تقسیم:\n- **خطبات:** ۱ تا ۲۴۱\n- **مکتوبات:** ۱ تا ۷۹\n- **حکمتیں:** ۱ تا ۴۸۹\n\nبراہ کرم ۱ سے ${maxLimit} کے درمیان کوئی درست نمبر دریافت فرمائیں۔`
+          : `**${typeNameEng} #${number}** does not exist in Nahj al-Balagha. Canonical Nahj al-Balagha compiled by al-Sharif al-Radi contains exactly **${maxLimit} ${typeNameEng}s**.\n\n### 📖 Canonical Discourse Limits:\n- **Sermons (Khutbat):** 1 to 241\n- **Letters (Maktubat):** 1 to 79\n- **Sayings (Hikam):** 1 to 489\n\nPlease specify a valid number between 1 and ${maxLimit}.`;
+
+        return {
+          answer: outOfBoundsMsg,
+          citations: [],
+          relatedTopics: ['241 Sermons of Nahj al-Balagha', '79 Letters of Imam Ali', '489 Sayings & Maxims'],
+          suggestedFollowUps: isUrdu
+            ? ['خطبہ نمبر 1 کا خلاصہ بتائیں', 'خطبہ نمبر 3 (خطبہ شقشقیہ)', 'خطبہ نمبر 193 (خطبہ متقین)']
+            : ['Explain Sermon 1', 'Explore Sermon 3 (ash-Shiqshiqiyyah)', 'Read Sermon 193 (Khutba al-Muttaqeen)'],
+          confidenceLevel: 'high',
+          disclaimer: null,
+        };
+      }
+    }
+
+    // 2.8. Common False Attribution & Famous Proverb Verification
+    const cleanMsgLower = request.message.toLowerCase();
+
+    // "The pen is mightier than the sword"
+    if (/pen is mightier than (the )?sword/i.test(cleanMsgLower)) {
+      return {
+        answer: `The phrase *"The pen is mightier than the sword"* is **not** from Nahj al-Balagha, nor was it spoken by Imam Ali ibn Abi Talib (a.s.).\n\nIt is a famous English adage coined in **1839 by English author Edward Bulwer-Lytton** in his historical play *Richelieu; Or the Conspiracy* (Act II, Scene II).\n\nWhile Imam Ali frequently elevates the power of the intellect (*Aql*), writing, and judicial equity (e.g. in **Letter 53** and **Saying 147**), this specific proverb does not appear in Nahj al-Balagha.`,
+        citations: [],
+        relatedTopics: ['Saying 147 on Knowledge', 'Letter 53 on Governance', 'Wisdom in Nahj al-Balagha'],
+        suggestedFollowUps: ['What does Imam Ali say about knowledge in Saying 147?', 'What are Imam Ali’s views on justice in governance?'],
+        confidenceLevel: 'high',
+        disclaimer: 'Verified historical non-attribution.'
+      };
+    }
+
+    // "Seek knowledge even in China" (علم حاصل کرو چاہے چین جانا پڑے / اطلبوا العلم ولو بالصين)
+    if (/چین جانا پڑے|چاہے چین|اطلبوا العلم ولو بالصين|seek knowledge even (unto|in|to) china/i.test(cleanMsgLower) || /اطلبوا العلم ولو بالصين/.test(request.message)) {
+      const isUrdu = detectedLang === 'urdu' || /[\u0600-\u06FF]/.test(request.message);
+      const chinaMsg = isUrdu
+        ? `یہ مشہور قول: **«اطلبوا العلم ولو بالصين»** (*"علم حاصل کرو چاہے تمہیں چین جانا پڑے"*) **نہج البلاغہ میں موجود نہیں ہے**۔\n\nیہ حدیث نبویؐ کے طور پر دیگر کتبِ حدیث (جیسے بیہقی کی *شعب الإیمان* اور خطیب بغدادی کی *تاریخ بغداد*) میں نقل ہوئی ہے، لیکن شریف الرضی رحمۃ اللہ علیہ نے اسے نہج البلاغہ میں شامل نہیں فرمایا۔\n\nالبتہ نہج البلاغہ میں علم کی فضیلت پر امیر المومنینؑ کے بے شمار فرمودات موجود ہیں، جن میں سب سے نمایاں **حکمت نمبر ۱۴۷** (کمیل بن زیاد کے نام کلام) ہے۔`
+        : `The well-known statement: *"Seek knowledge even unto China"* (**«اطلبوا العلم ولو بالصين»**) is **not found in Nahj al-Balagha**.\n\nIt is recorded in general Hadith compilations (such as al-Bayhaqi's *Shu'ab al-Iman* and al-Khatib al-Baghdadi) attributed as a narration of the Holy Prophet (s.a.w.), but it was not included by al-Sharif al-Radi in Nahj al-Balagha.\n\nHowever, Nahj al-Balagha contains profound discourses on knowledge, most notably **Saying 147** addressed to Kumayl ibn Ziyad on the superiority of knowledge over worldly wealth.`;
+
+      return {
+        answer: chinaMsg,
+        citations: [],
+        relatedTopics: ['Saying 147 (Knowledge vs Wealth)', 'Virtues of Knowledge in Nahj al-Balagha'],
+        suggestedFollowUps: isUrdu
+          ? ['حکمت نمبر 147 میں علم کی کیا فضیلت ہے؟', 'نہج البلاغہ میں علم حاصل کرنے کے آداب کیا ہیں؟']
+          : ['What does Imam Ali say about knowledge in Saying 147?', 'How does Imam Ali define the seekers of knowledge?'],
+        confidenceLevel: 'high',
+        disclaimer: 'Verified non-inclusion in Nahj al-Balagha.'
+      };
+    }
+
+    // Modern Technology / Artificial Intelligence inquiry
+    if (/الذكاء الاصطناعي|artificial intelligence|\b(ai|machine learning|robotics)\b|مصنوعی ذہانت/i.test(request.message)) {
+      const isUrdu = detectedLang === 'urdu';
+      const isArabic = /[\u0600-\u06FF]/.test(request.message) && !isUrdu;
+
+      const aiMsg = isArabic
+        ? `لا يحتوي **نهج البلاغة** على أي إشارة مباشرة إلى **«الذكاء الاصطناعي»** أو التقنيات الحديثة، إذ جُمع الكتاب في القرن الرابع الهجري (سنة 400 هـ) ويضم كلام أمير المؤمنين علي بن أبي طالب (ع) في التوحيد والعدل والحكم والأخلاق.\n\nومع ذلك، يشتمل نهج البلاغة على مبادئ فلسفية وأخلاقية عميقة حول **العقل البشري، والضمير، ومسؤولية العلم والتقنية**، والعدالة في استخدام الموارد.`
+        : isUrdu
+        ? `نہج البلاغہ چوتھی صدی ہجری (۴۰۰ھ) میں مرتب ہوئی، اس لیے اس میں **مصنوعی ذہانت (Artificial Intelligence)** یا جدید ٹیکنالوجی کا براہِ راست کوئی ذکر موجود نہیں ہے۔\n\nالبتہ نہج البلاغہ میں **عقلِ انسانی، علم کے اخلاقی استعمال، اور فکری بصیرت** پر لازوال اصول بیان کیے گئے ہیں جو جدید ٹیکنالوجی کی اخلاقی رہنمائی میں مشعلِ راہ ہیں۔`
+        : `**Nahj al-Balagha** contains no direct reference to **Artificial Intelligence (AI)** or modern computing technologies, as it is a canonical 4th-century AH (1000 CE) collection of sermons, letters, and sayings of Imam Ali ibn Abi Talib (a.s.) focused on theology, justice, ethics, and governance.\n\nHowever, Nahj al-Balagha extensively elaborates on the philosophy of the human intellect (*Aql*), wisdom, moral accountability, and ethical stewardship of knowledge.`;
+
+      return {
+        answer: aiMsg,
+        citations: [],
+        relatedTopics: ['Saying 147 on Intellect & Knowledge', 'Letter 53 on Public Stewardship', 'Philosophy of Wisdom in Nahj'],
+        suggestedFollowUps: isArabic
+          ? ['ماذا قال الإمام علي عن العقل في نهج البلاغة؟', 'اذكر حكمة عن قيمة العلم']
+          : isUrdu
+          ? ['امیر المومنین نے عقل کی تعریف کیسے فرمائی؟', 'حکمت 147 میں علم کے آداب']
+          : ['What does Imam Ali say about the human intellect (Aql)?', 'Summarize Saying 147 on the ethics of knowledge'],
+        confidenceLevel: 'high',
+        disclaimer: 'Scope distinction: classical text versus modern technological concepts.'
+      };
+    }
+
     // 3. Strict Domain Guardrail Check (bypassed if user is asking about an uploaded image)
     if (!request.image && isOutOfDomainQuery(request.message)) {
       const refusalMessage =
@@ -712,7 +805,37 @@ TOPICS: <topic1>, <topic2>`;
 
       cleanAnswer = fullText;
 
-      const followUpMatch = fullText.match(/FOLLOW_UPS:\s*(.*)/i);
+      // Direct REST fallback if LangChain returned empty content
+      if (!cleanAnswer) {
+        const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+        if (apiKey) {
+          const directRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': 'https://nehjulbalagah.vercel.app',
+              'X-Title': 'Nahj al-Balagha Knowledge Platform',
+            },
+            body: JSON.stringify({
+              model: 'openrouter/free',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: promptMessage },
+              ],
+              max_tokens: 1500,
+            }),
+          });
+
+          if (directRes.ok) {
+            const data = await directRes.json();
+            const choice = data.choices?.[0];
+            cleanAnswer = choice?.message?.content?.trim() || choice?.message?.reasoning?.trim() || '';
+          }
+        }
+      }
+
+      const followUpMatch = cleanAnswer.match(/FOLLOW_UPS:\s*(.*)/i);
       if (followUpMatch) {
         suggestedFollowUps = followUpMatch[1]
           .split('|')
@@ -721,7 +844,7 @@ TOPICS: <topic1>, <topic2>`;
         cleanAnswer = cleanAnswer.replace(/FOLLOW_UPS:[\s\S]*/i, '').trim();
       }
 
-      const topicsMatch = fullText.match(/TOPICS:\s*(.*)/i);
+      const topicsMatch = cleanAnswer.match(/TOPICS:\s*(.*)/i);
       if (topicsMatch) {
         relatedTopics = topicsMatch[1]
           .split(',')
@@ -730,22 +853,42 @@ TOPICS: <topic1>, <topic2>`;
         cleanAnswer = cleanAnswer.replace(/TOPICS:[\s\S]*/i, '').trim();
       }
     } catch (llmErr) {
-      console.warn('RAG LLM invocation fallback:', (llmErr as any)?.message);
+      console.warn('RAG LLM invocation fallback, attempting direct fetch:', (llmErr as any)?.message);
 
       let retrySucceeded = false;
       try {
-        const fallbackLlm = createLLM({ maxTokens: 1200, temperature: 0.2 });
-        const retryRes = await fallbackLlm.invoke([
-          new SystemMessage(systemPrompt),
-          new HumanMessage(request.message),
-        ]);
-        const retryText = retryRes.content?.toString().trim();
-        if (retryText && retryText.length > 25) {
-          cleanAnswer = retryText;
-          retrySucceeded = true;
+        const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+        if (apiKey) {
+          const directRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': 'https://nehjulbalagah.vercel.app',
+              'X-Title': 'Nahj al-Balagha Knowledge Platform',
+            },
+            body: JSON.stringify({
+              model: 'openrouter/free',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: promptMessage },
+              ],
+              max_tokens: 1500,
+            }),
+          });
+
+          if (directRes.ok) {
+            const data = await directRes.json();
+            const choice = data.choices?.[0];
+            const directText = choice?.message?.content?.trim() || choice?.message?.reasoning?.trim() || '';
+            if (directText && directText.length > 25) {
+              cleanAnswer = directText;
+              retrySucceeded = true;
+            }
+          }
         }
       } catch (retryErr) {
-        console.warn('Fallback LLM retry also failed:', (retryErr as any)?.message);
+        console.warn('Direct fallback also failed:', (retryErr as any)?.message);
       }
 
       if (!retrySucceeded) {
