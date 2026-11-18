@@ -23,13 +23,147 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     ],
   },
   {
+    entityName: 'Imam al-Husayn ibn Ali (a.s.) / Sayyid al-Shuhada',
+    passageType: 'letter',
+    passageNumbers: [47, 207, 24, 31],
+    canonicalTerms: [
+      'imam hussain', 'imam husayn', 'hussain', 'husayn', 'imam husein',
+      'al-husayn', 'al-hussain', 'sayyid al-shuhada', 'grandson of the prophet',
+      'things mentioned about imam hussain', 'things mentioned about imam husayn',
+      'imam hussain in nahj al balagha', 'imam husayn in nahj al balagha',
+      'about imam hussain', 'about imam husayn',
+      'حسین', 'امام حسین', 'سید الشہداء', 'حسین بن علی', 'شہید کربلا', 'امام حسینؑ'
+    ],
+  },
+  {
+    entityName: 'Imam al-Hasan ibn Ali (a.s.) / al-Mujtaba',
+    passageType: 'letter',
+    passageNumbers: [31, 47, 207, 24],
+    canonicalTerms: [
+      'imam hasan', 'imam hassan', 'al-hasan', 'al-hassan', 'hasan ibn ali',
+      'things mentioned about imam hasan', 'things mentioned about imam hassan',
+      'about imam hasan', 'about imam hassan',
+      'امام حسن', 'حسن بن علی', 'امام حسن مجتبیٰ', 'امام حسنؑ'
+    ],
+  },
+  {
     entityName: 'The Holy Prophet Muhammad (s.a.w.)',
     passageType: 'sermon',
     passageNumbers: [1, 2, 26, 94, 95, 105, 116, 161, 190, 235],
     canonicalTerms: [
       'prophet muhammad', 'holy prophet', 'messenger of allah', 'rasool allah', 'rasulullah',
-      'rasoolullah', 'burial of the prophet', 'washing of the prophet',
+      'rasoolullah', 'burial of the prophet', 'washing of the prophet', 'prophet of islam',
+      'about prophet muhammad', 'things mentioned about prophet muhammad',
       'رسول اللہ', 'پیغمبر اکرم', 'خاتم النبیین', 'نبی کریم', 'رسول خدا'
+    ],
+  },
+  {
+    entityName: 'Hamzah ibn Abd al-Muttalib (Chief of Martyrs / Asadullah)',
+    passageType: 'letter',
+    passageNumbers: [28],
+    canonicalTerms: [
+      'hamzah', 'hamza', 'sayyid al-shuhada hamzah', 'asadullah', 'uncle hamzah',
+      'حمزہ', 'حمزہ بن عبد المطلب', 'سید الشہداء حمزہ'
+    ],
+  },
+  {
+    entityName: 'Ja\'far al-Tayyar (Ja\'far ibn Abi Talib / Dhu al-Janahayn)',
+    passageType: 'letter',
+    passageNumbers: [28, 23],
+    canonicalTerms: [
+      'jafar al-tayyar', 'ja\'far al-tayyar', 'jafar', 'dhu al-janahayn',
+      'two wings in paradise', 'جعفر طیار', 'جعفر بن ابی طالب'
+    ],
+  },
+  {
+    entityName: 'Muhammad ibn al-Hanafiyyah (Banner of Jamal)',
+    passageType: 'sermon',
+    passageNumbers: [11],
+    canonicalTerms: [
+      'muhammad ibn al-hanafiyyah', 'ibn al-hanafiyyah', 'hanafiyyah', 'banner of jamal',
+      'محمد بن الحنفیہ', 'ابن حنفیہ'
+    ],
+  },
+  {
+    entityName: 'Muhammad ibn Abi Bakr (Governor of Egypt)',
+    passageType: 'letter',
+    passageNumbers: [27, 34, 68],
+    canonicalTerms: [
+      'muhammad ibn abi bakr', 'muhammad bin abi bakr', 'martyrdom of muhammad ibn abi bakr',
+      'محمد بن ابی بکر'
+    ],
+  },
+  {
+    entityName: 'Abdullah ibn Abbas (Ibn Abbas)',
+    passageType: 'letter',
+    passageNumbers: [18, 22, 35, 72, 240],
+    canonicalTerms: [
+      'ibn abbas', 'abdullah ibn abbas', 'abdullah bin abbas', 'ابن عباس', 'عبد اللہ بن عباس'
+    ],
+  },
+  {
+    entityName: 'Aisha (Umm al-Mu\'minin / Battle of Jamal)',
+    passageType: 'sermon',
+    passageNumbers: [13, 80, 156],
+    canonicalTerms: [
+      'aisha', 'ayesha', 'a\'ishah', 'mother of believers aisha', 'عائشہ'
+    ],
+  },
+  {
+    entityName: 'Amr ibn al-Aas',
+    passageType: 'sermon',
+    passageNumbers: [84, 39],
+    canonicalTerms: [
+      'amr ibn al-aas', 'amr ibn al-as', 'amr bin aas', 'عمرو بن العاص'
+    ],
+  },
+  {
+    entityName: 'Uthman ibn Affan (Third Caliph)',
+    passageType: 'sermon',
+    passageNumbers: [3, 30, 164, 240],
+    canonicalTerms: [
+      'uthman', 'uthman ibn affan', 'killing of uthman', 'murder of uthman', 'third caliph',
+      'عثمان', 'عثمان بن عفان', 'قتل عثمان'
+    ],
+  },
+  {
+    entityName: 'Prophet Moses (Musa a.s.) & Pharaoh',
+    passageType: 'sermon',
+    passageNumbers: [160, 181, 192],
+    canonicalTerms: [
+      'prophet musa', 'prophet moses', 'musa', 'moses', 'pharaoh', 'firawn', 'موسیٰ', 'فرعون'
+    ],
+  },
+  {
+    entityName: 'Prophet Jesus (Isa ibn Maryam a.s.)',
+    passageType: 'sermon',
+    passageNumbers: [160],
+    canonicalTerms: [
+      'prophet isa', 'prophet jesus', 'isa ibn maryam', 'jesus', 'christ', 'عیسیٰ', 'عیسیٰ بن مریم'
+    ],
+  },
+  {
+    entityName: 'Prophet Adam (a.s.)',
+    passageType: 'sermon',
+    passageNumbers: [1, 91, 192],
+    canonicalTerms: [
+      'prophet adam', 'adam', 'creation of adam', 'حضرت آدم', 'آدم'
+    ],
+  },
+  {
+    entityName: 'Prophet Solomon (Sulayman a.s.)',
+    passageType: 'sermon',
+    passageNumbers: [182],
+    canonicalTerms: [
+      'prophet sulayman', 'prophet solomon', 'solomon', 'sulaiman', 'سلیمان', 'حضرت سلیمان'
+    ],
+  },
+  {
+    entityName: 'Dhi\'lib al-Yamani (Seeing Allah)',
+    passageType: 'sermon',
+    passageNumbers: [179],
+    canonicalTerms: [
+      'dhi\'lib', 'dhi\'lib al-yamani', 'did you see your lord', 'ذعلب الیمانی', 'ذعلب'
     ],
   },
   {
