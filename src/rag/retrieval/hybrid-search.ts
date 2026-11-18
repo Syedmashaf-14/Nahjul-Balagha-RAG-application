@@ -18,8 +18,14 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
       'sayyidatun nisa', 'sayyidatu nisa', 'sayyida fatima', 'bibi fatima',
       'lady fatima', 'daughter of the prophet', 'burial of fatima', 'funeral of fatima',
       'things mentioned about hazrat fatima', 'fatima in nahj al balagha', 'fatima in nahj',
+      // Extended aliases and metaphorical names
+      'lady of heaven', 'lady of paradise', 'lady of light', 'mistress of women',
+      'mistress of paradise', 'mistress of the worlds', 'chief of women',
+      'daughter of prophet', 'daughter of messenger', 'sayyidatu nisa al-alamin',
+      'mother of the imams', 'mother of hasan and husayn', 'mother of hassan',
+      'بضعۃ الرسول', 'خاتون جنت', 'سیدہ کائنات', 'مادر حسنین', 'سیدۃ النساء العالمین',
       'فاطمة', 'فاطمہ', 'حضرت فاطمہ', 'سيدة النساء', 'الزهراء', 'زہراء', 'بتول', 'دفن فاطمہ',
-      'فاطمۃ الزہراء', 'سیدہ فاطمہ', 'دختر رسول'
+      'فاطمۃ الزہراء', 'سیدہ فاطمہ', 'دختر رسول', 'بنت رسول', 'فاطمہ زہراء'
     ],
   },
   {
@@ -32,7 +38,12 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
       'things mentioned about imam hussain', 'things mentioned about imam husayn',
       'imam hussain in nahj al balagha', 'imam husayn in nahj al balagha',
       'about imam hussain', 'about imam husayn',
-      'حسین', 'امام حسین', 'سید الشہداء', 'حسین بن علی', 'شہید کربلا', 'امام حسینؑ'
+      // Extended aliases
+      'karbala', 'battle of karbala', 'master of martyrs', 'chief of martyrs',
+      'prince of martyrs', 'grandson of prophet', 'grandson of messenger',
+      'son of fatima', 'son of ali and fatima', 'third imam',
+      'شہید کربلا', 'کربلا', 'سید الشہداء حسین',
+      'حسین', 'امام حسین', 'سید الشہداء', 'حسین بن علی', 'امام حسینؑ'
     ],
   },
   {
@@ -43,7 +54,9 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
       'imam hasan', 'imam hassan', 'al-hasan', 'al-hassan', 'hasan ibn ali',
       'things mentioned about imam hasan', 'things mentioned about imam hassan',
       'about imam hasan', 'about imam hassan',
-      'امام حسن', 'حسن بن علی', 'امام حسن مجتبیٰ', 'امام حسنؑ'
+      // Extended aliases
+      'al-mujtaba', 'mujtaba', 'المجتبی', 'second imam', 'elder son of ali',
+      'امام حسن', 'حسن بن علی', 'امام حسن مجتبیٰ', 'امام حسنؑ', 'امام مجتبیٰ'
     ],
   },
   {
@@ -54,6 +67,10 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
       'prophet muhammad', 'holy prophet', 'messenger of allah', 'rasool allah', 'rasulullah',
       'rasoolullah', 'burial of the prophet', 'washing of the prophet', 'prophet of islam',
       'about prophet muhammad', 'things mentioned about prophet muhammad',
+      // Extended aliases
+      'seal of prophets', 'seal of prophethood', 'khatam ul anbiya', 'khatam al anbiya',
+      'last prophet', 'final prophet', 'prophet of mercy', 'mercy to worlds',
+      'خاتم الانبیاء', 'نبی آخر الزمان', 'سرور کائنات', 'رحمۃ للعالمین', 'ختم نبوت',
       'رسول اللہ', 'پیغمبر اکرم', 'خاتم النبیین', 'نبی کریم', 'رسول خدا'
     ],
   },
@@ -389,7 +406,9 @@ export const HISTORICAL_ENTITIES: EntityMatch[] = [
     canonicalTerms: [
       'muawiya', 'muawiyah', 'moawiya', 'ameer e sham', 'ameer-e-sham', 'ameer sham',
       'ammere sham', 'amir e sham', 'amir sham', 'governor of syria',
-      'معاویہ', 'معاوية', 'امیر شام', 'امیرِ شام', 'شام کے والی', 'اہل شام'
+      'amir of shaam', 'ruler of syria', 'muawiya ibn abi sufyan', 'muawiyah ibn abi sufyan',
+      'معاویہ', 'معاوية', 'امیر شام', 'امیرِ شام', 'شام کے والی', 'اہل شام',
+      'معاویہ بن ابی سفیان'
     ],
   },
   {
@@ -577,7 +596,9 @@ export class HybridSearchEngine {
 
   /**
    * Resolves query to an exact canonical passage if it matches unique historical entities or canonical discourse titles.
+   * When an entity has multiple candidate passages, scores each candidate against query content and returns the best match.
    * e.g. "wasiiyat to imam hassan" -> { type: 'letter', number: 31 }
+   * e.g. "lady of heaven" -> { type: 'sermon', number: 202 }  (Fatima burial sermon, NOT sermon #1)
    * e.g. "uthman ibn hunayf" -> { type: 'letter', number: 45 }
    * e.g. "shurayh 80 dinars" -> { type: 'letter', number: 3 }
    * e.g. "ibn muljam deathbed" -> { type: 'letter', number: 47 }
@@ -593,28 +614,80 @@ export class HybridSearchEngine {
     }
 
     const q = query.toLowerCase().trim();
-    let bestMatch: { type: PassageType; number: number; termLength: number } | null = null;
+
+    // Find the best matching entity (longest canonical term wins for specificity)
+    let bestEntityMatch: { entity: EntityMatch; termLength: number } | null = null;
 
     for (const entity of HISTORICAL_ENTITIES) {
-      if (entity.passageNumbers && entity.passageNumbers.length >= 1) {
-        for (const term of entity.canonicalTerms) {
-          const tLower = term.toLowerCase();
-          if (q.includes(tLower)) {
-            // Longest matching term represents highest specificity
-            if (!bestMatch || tLower.length > bestMatch.termLength) {
-              const defaultType = entity.passageType || 'sermon';
-              bestMatch = {
-                type: defaultType,
-                number: entity.passageNumbers[0],
-                termLength: tLower.length,
-              };
-            }
+      if (!entity.passageNumbers || entity.passageNumbers.length < 1) continue;
+      for (const term of entity.canonicalTerms) {
+        const tLower = term.toLowerCase();
+        if (q.includes(tLower)) {
+          if (!bestEntityMatch || tLower.length > bestEntityMatch.termLength) {
+            bestEntityMatch = { entity, termLength: tLower.length };
           }
         }
       }
     }
 
-    return bestMatch ? { type: bestMatch.type, number: bestMatch.number } : null;
+    if (!bestEntityMatch) return null;
+
+    const { entity } = bestEntityMatch;
+    const defaultType: PassageType = entity.passageType || 'sermon';
+
+    // If only 1 candidate, return it directly — no scoring needed
+    if (entity.passageNumbers!.length === 1) {
+      return { type: defaultType, number: entity.passageNumbers![0] };
+    }
+
+    // Multiple candidates — score each against the actual query content to pick the most relevant one
+    const queryTokens = q
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, ' ')
+      .split(/\s+/)
+      .filter((t) => t.length > 1);
+
+    let bestScore = -1;
+    let bestPassage: { type: PassageType; number: number } = {
+      type: defaultType,
+      number: entity.passageNumbers![0],
+    };
+
+    for (const pNum of entity.passageNumbers!) {
+      const passage = this.allPassages.find((p) => {
+        const pt = (p.chapter || 'saying').toLowerCase() as PassageType;
+        const pn = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
+        return pt === defaultType && pn === pNum;
+      });
+
+      // Fall back: search without type constraint (for mixed-type entity lists like Husayn's)
+      const passageFallback = passage || this.allPassages.find((p) => {
+        const pn = typeof p.number === 'number' ? p.number : parseInt(p.number, 10);
+        return pn === pNum;
+      });
+
+      if (!passageFallback) continue;
+
+      const pType = (passageFallback.chapter || 'saying').toLowerCase() as PassageType;
+      const pTitle = (passageFallback.title || '').toLowerCase();
+      const pEng = (passageFallback.translationText || '').toLowerCase();
+      const pUrdu = (passageFallback.urduTranslation || '').toLowerCase();
+      const pTopics = ((passageFallback.topics || []) as string[]).join(' ').toLowerCase();
+
+      let score = 0;
+      for (const token of queryTokens) {
+        if (pTitle.includes(token)) score += 10;
+        if (pEng.includes(token)) score += 3;
+        if (pUrdu.includes(token)) score += 3;
+        if (pTopics.includes(token)) score += 2;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPassage = { type: pType, number: pNum };
+      }
+    }
+
+    return bestPassage;
   }
 
   /**
@@ -727,7 +800,14 @@ export class HybridSearchEngine {
       'things', 'thing', 'mentioned', 'mention', 'mentions', 'about', 'hazrat', 'say',
       'does', 'did', 'do', 'any', 'all', 'give', 'detail', 'details', 'us', 'are', 'was',
       'related', 'regarding', 'concerning', 'explain', 'explanation', 'view', 'views',
-      'personality', 'personalities', 'person', 'quote', 'quotes', 'reference', 'references'
+      'personality', 'personalities', 'person', 'quote', 'quotes', 'reference', 'references',
+      // Common prepositions & pronouns causing false-positive BM25 ties
+      'of', 'from', 'his', 'her', 'by', 'with', 'its', 'our', 'your', 'their', 'my',
+      'he', 'she', 'they', 'we', 'it', 'this', 'these', 'those', 'be', 'been', 'has',
+      'have', 'had', 'will', 'would', 'shall', 'should', 'may', 'might', 'can', 'could',
+      'not', 'no', 'nor', 'but', 'or', 'so', 'yet', 'as', 'up', 'out', 'if', 'then',
+      'than', 'when', 'where', 'who', 'whom', 'whose', 'how', 'why', 'each', 'every',
+      'some', 'such', 'into', 'through', 'over', 'under', 'after', 'before', 'between'
     ]);
     const tokens = rawLower
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, ' ')
